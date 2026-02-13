@@ -1,5 +1,0 @@
-# pack-refs with: peeled fully-peeled sorted 
-ce079a1bdb30f37ebea325a6020806da14a6a2c3 refs/remotes/origin/main
-945f864bf3c95a77f2b20d2fdd70fe48bb383b25 refs/remotes/origin/parsingRust
-a1fbfd1cb258c43198d91b541d3d45b8580dc2b0 refs/remotes/origin/perf_tweaks
-5a14c80f88539e97b6484f662dbf714dd0b86a3d refs/remotes/origin/testingMemorySwapToRust
