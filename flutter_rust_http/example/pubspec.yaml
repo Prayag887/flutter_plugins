@@ -1,0 +1,38 @@
+name: image_ffi_example
+description: "Demonstrates how to use the image_ffi plugin with benchmarking."
+publish_to: 'none'
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  image_ffi:
+    path: ../
+  image_picker: ^1.0.7
+  path_provider: ^2.1.2
+
+
+  # Competitors
+  image: ^4.1.3
+  flutter_image_compress: ^2.2.0
+  image_editor: ^1.5.0
+  image_cropper: ^11.0.0
+
+  # Utilities
+  provider: ^6.1.1
+  collection: ^1.18.0
+  fl_chart: ^1.1.1
+
+dev_dependencies:
+  integration_test:
+    sdk: flutter
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/test_image.jpg

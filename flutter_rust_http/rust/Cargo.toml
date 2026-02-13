@@ -1,0 +1,25 @@
+[package]
+name = "flutter_image_loader"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "staticlib"]
+
+[dependencies]
+flutter_rust_bridge = "=2.11.1"
+tokio = { version = "1.35", features = ["sync"] }
+anyhow = "1.0"
+image = { version = "0.24", features = ["jpeg", "png", "webp", "gif", "bmp"] }
+fast_image_resize = "3.0.4"
+lazy_static = "1.4"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true
+
+[target.'cfg(target_arch = "aarch64")'.dependencies]
+# ARM NEON optimizations are built-in

@@ -1,0 +1,33 @@
+name: image_ffi
+description: High-performance image handling for Flutter powered by Rust FFI
+version: 0.1.0
+homepage: https://github.com/Prayag887/image_ffi
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+  flutter: ">=3.10.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Generated Rust bindings
+  flutter_rust_bridge: ^2.11.1
+  freezed_annotation: ^2.4.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+  # Add build_runner for code generation if needed
+  build_runner: ^2.4.8
+  freezed: ^2.4.6
+
+flutter:
+  plugin:
+    platforms:
+      android:
+        package: com.prayag.image_ffi
+        pluginClass: ImagePlugin
+      ios:
+        pluginClass: ImagePlugin

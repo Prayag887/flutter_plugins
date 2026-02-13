@@ -1,0 +1,3 @@
+rust_input: crate
+rust_root: ./
+dart_output: ../lib/generated_bindings.dart
