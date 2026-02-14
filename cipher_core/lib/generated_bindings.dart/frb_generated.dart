@@ -64,7 +64,7 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
   String get codegenVersion => '2.11.1';
 
   @override
-  int get rustContentHash => 681677917;
+  int get rustContentHash => 1818424557;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -75,12 +75,12 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
 }
 
 abstract class RustLibApi extends BaseApi {
-  U8Array32 crateHmacSha256StateFinalize({required HmacSha256State that});
+  U8Array20 crateSha1HasherFinalize({required Sha1Hasher that});
 
-  HmacSha256State crateHmacSha256StateNew({required List<int> key});
+  Sha1Hasher crateSha1HasherNew();
 
-  void crateHmacSha256StateUpdate({
-    required HmacSha256State that,
+  void crateSha1HasherUpdate({
+    required Sha1Hasher that,
     required List<int> data,
   });
 
@@ -93,6 +93,15 @@ abstract class RustLibApi extends BaseApi {
     required List<int> data,
   });
 
+  U8Array32 crateSha256HmacHasherFinalize({required Sha256HmacHasher that});
+
+  Sha256HmacHasher? crateSha256HmacHasherNew({required List<int> key});
+
+  void crateSha256HmacHasherUpdate({
+    required Sha256HmacHasher that,
+    required List<int> data,
+  });
+
   U8Array64 crateSha512HasherFinalize({required Sha512Hasher that});
 
   Sha512Hasher crateSha512HasherNew();
@@ -102,13 +111,18 @@ abstract class RustLibApi extends BaseApi {
     required List<int> data,
   });
 
+  Uint8List? crateAes256Decrypt({
+    required List<int> ciphertext,
+    required List<int> key,
+  });
+
   Future<Uint8List?> crateAes256DecryptAsync({
     required List<int> ciphertext,
     required List<int> key,
   });
 
-  Uint8List? crateAes256DecryptSync({
-    required List<int> ciphertext,
+  Uint8List? crateAes256Encrypt({
+    required List<int> plaintext,
     required List<int> key,
   });
 
@@ -117,99 +131,150 @@ abstract class RustLibApi extends BaseApi {
     required List<int> key,
   });
 
-  Uint8List? crateAes256EncryptSync({
-    required List<int> plaintext,
-    required List<int> key,
-  });
-
-  (Uint8List, U8Array32)? crateEncryptThenMacSync({
+  (Uint8List, U8Array32)? crateEncryptThenHmac({
     required List<int> plaintext,
     required List<int> encKey,
     required List<int> macKey,
   });
 
-  Uint8List? crateFromHexSync({required String hexString});
+  Future<(Uint8List, U8Array32)?> crateEncryptThenHmacAsync({
+    required List<int> plaintext,
+    required List<int> encKey,
+    required List<int> macKey,
+  });
 
-  BigInt crateHashSizeSync({required String algorithm});
+  Uint8List? crateFromHex({required String hexString});
 
-  Uint8List? crateHashThenEncryptSync({
+  List<String> crateGetAllAlgorithms();
+
+  BigInt crateHashSize({required String algorithm});
+
+  Uint8List? crateHashThenEncrypt({
     required List<int> data,
     required List<int> key,
   });
 
-  U8Array16 crateHmacMd5Sync({required List<int> key, required List<int> data});
+  Future<Uint8List?> crateHashThenEncryptAsync({
+    required List<int> data,
+    required List<int> key,
+  });
 
-  U8Array20 crateHmacSha1Sync({
+  U8Array16 crateHmacMd5({required List<int> key, required List<int> data});
+
+  Future<U8Array16> crateHmacMd5Async({
     required List<int> key,
     required List<int> data,
   });
 
-  U8Array28 crateHmacSha224Sync({
+  U8Array20 crateHmacSha1({required List<int> key, required List<int> data});
+
+  Future<U8Array20> crateHmacSha1Async({
     required List<int> key,
     required List<int> data,
   });
+
+  U8Array28 crateHmacSha224({required List<int> key, required List<int> data});
+
+  Future<U8Array28> crateHmacSha224Async({
+    required List<int> key,
+    required List<int> data,
+  });
+
+  U8Array32 crateHmacSha256({required List<int> key, required List<int> data});
 
   Future<U8Array32> crateHmacSha256Async({
     required List<int> key,
     required List<int> data,
   });
 
-  List<U8Array32> crateHmacSha256BatchSync({
+  List<U8Array32> crateHmacSha256Batch({
     required List<int> key,
     required List<Uint8List> messages,
   });
 
-  U8Array32 crateHmacSha256Sync({
+  Future<List<U8Array32>> crateHmacSha256BatchAsync({
+    required List<int> key,
+    required List<Uint8List> messages,
+  });
+
+  U8Array48 crateHmacSha384({required List<int> key, required List<int> data});
+
+  Future<U8Array48> crateHmacSha384Async({
     required List<int> key,
     required List<int> data,
   });
 
-  U8Array48 crateHmacSha384Sync({
-    required List<int> key,
-    required List<int> data,
-  });
+  U8Array64 crateHmacSha512({required List<int> key, required List<int> data});
 
   Future<U8Array64> crateHmacSha512Async({
     required List<int> key,
     required List<int> data,
   });
 
-  U8Array64 crateHmacSha512Sync({
+  List<U8Array64> crateHmacSha512Batch({
     required List<int> key,
-    required List<int> data,
+    required List<Uint8List> messages,
   });
+
+  Future<List<U8Array64>> crateHmacSha512BatchAsync({
+    required List<int> key,
+    required List<Uint8List> messages,
+  });
+
+  U8Array16 crateMd5({required List<int> data});
 
   Future<U8Array16> crateMd5Async({required List<int> data});
 
-  U8Array16 crateMd5Sync({required List<int> data});
+  U8Array20 crateSha1({required List<int> data});
 
   Future<U8Array20> crateSha1Async({required List<int> data});
 
-  U8Array20 crateSha1Sync({required List<int> data});
+  U8Array28 crateSha224({required List<int> data});
 
-  U8Array28 crateSha224Sync({required List<int> data});
+  Future<U8Array28> crateSha224Async({required List<int> data});
+
+  U8Array32 crateSha256({required List<int> data});
 
   Future<U8Array32> crateSha256Async({required List<int> data});
 
-  List<U8Array32> crateSha256BatchSync({required List<Uint8List> inputs});
+  List<U8Array32> crateSha256Batch({required List<Uint8List> inputs});
 
-  U8Array32 crateSha256Sync({required List<int> data});
+  Future<List<U8Array32>> crateSha256BatchAsync({
+    required List<Uint8List> inputs,
+  });
+
+  U8Array48 crateSha384({required List<int> data});
 
   Future<U8Array48> crateSha384Async({required List<int> data});
 
-  U8Array48 crateSha384Sync({required List<int> data});
+  U8Array64 crateSha512({required List<int> data});
 
-  U8Array28 crateSha512224Sync({required List<int> data});
+  U8Array28 crateSha512224({required List<int> data});
 
-  U8Array32 crateSha512256Sync({required List<int> data});
+  Future<U8Array28> crateSha512224Async({required List<int> data});
+
+  U8Array32 crateSha512256({required List<int> data});
+
+  Future<U8Array32> crateSha512256Async({required List<int> data});
 
   Future<U8Array64> crateSha512Async({required List<int> data});
 
-  U8Array64 crateSha512Sync({required List<int> data});
+  List<U8Array64> crateSha512Batch({required List<Uint8List> inputs});
 
-  String crateToHexSync({required List<int> bytes});
+  Future<List<U8Array64>> crateSha512BatchAsync({
+    required List<Uint8List> inputs,
+  });
 
-  Uint8List? crateVerifyThenDecryptSync({
+  String crateToHex({required List<int> bytes});
+
+  Uint8List? crateVerifyHmacThenDecrypt({
+    required List<int> ciphertext,
+    required List<int> mac,
+    required List<int> encKey,
+    required List<int> macKey,
+  });
+
+  Future<Uint8List?> crateVerifyHmacThenDecryptAsync({
     required List<int> ciphertext,
     required List<int> mac,
     required List<int> encKey,
@@ -217,13 +282,12 @@ abstract class RustLibApi extends BaseApi {
   });
 
   RustArcIncrementStrongCountFnType
-  get rust_arc_increment_strong_count_HmacSha256State;
+  get rust_arc_increment_strong_count_Sha1Hasher;
 
   RustArcDecrementStrongCountFnType
-  get rust_arc_decrement_strong_count_HmacSha256State;
+  get rust_arc_decrement_strong_count_Sha1Hasher;
 
-  CrossPlatformFinalizerArg
-  get rust_arc_decrement_strong_count_HmacSha256StatePtr;
+  CrossPlatformFinalizerArg get rust_arc_decrement_strong_count_Sha1HasherPtr;
 
   RustArcIncrementStrongCountFnType
   get rust_arc_increment_strong_count_Sha256Hasher;
@@ -232,6 +296,15 @@ abstract class RustLibApi extends BaseApi {
   get rust_arc_decrement_strong_count_Sha256Hasher;
 
   CrossPlatformFinalizerArg get rust_arc_decrement_strong_count_Sha256HasherPtr;
+
+  RustArcIncrementStrongCountFnType
+  get rust_arc_increment_strong_count_Sha256HmacHasher;
+
+  RustArcDecrementStrongCountFnType
+  get rust_arc_decrement_strong_count_Sha256HmacHasher;
+
+  CrossPlatformFinalizerArg
+  get rust_arc_decrement_strong_count_Sha256HmacHasherPtr;
 
   RustArcIncrementStrongCountFnType
   get rust_arc_increment_strong_count_Sha512Hasher;
@@ -251,68 +324,64 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   });
 
   @override
-  U8Array32 crateHmacSha256StateFinalize({required HmacSha256State that}) {
+  U8Array20 crateSha1HasherFinalize({required Sha1Hasher that}) {
     return handler.executeSync(
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
-          sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHmacSha256State(
+          sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSha1Hasher(
             that,
             serializer,
           );
           return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 1)!;
         },
         codec: SseCodec(
-          decodeSuccessData: sse_decode_u_8_array_32,
+          decodeSuccessData: sse_decode_u_8_array_20,
           decodeErrorData: null,
         ),
-        constMeta: kCrateHmacSha256StateFinalizeConstMeta,
+        constMeta: kCrateSha1HasherFinalizeConstMeta,
         argValues: [that],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateHmacSha256StateFinalizeConstMeta =>
-      const TaskConstMeta(
-        debugName: "HmacSha256State_finalize",
-        argNames: ["that"],
-      );
+  TaskConstMeta get kCrateSha1HasherFinalizeConstMeta =>
+      const TaskConstMeta(debugName: "Sha1Hasher_finalize", argNames: ["that"]);
 
   @override
-  HmacSha256State crateHmacSha256StateNew({required List<int> key}) {
+  Sha1Hasher crateSha1HasherNew() {
     return handler.executeSync(
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
-          sse_encode_list_prim_u_8_loose(key, serializer);
           return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 2)!;
         },
         codec: SseCodec(
           decodeSuccessData:
-              sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHmacSha256State,
+              sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSha1Hasher,
           decodeErrorData: null,
         ),
-        constMeta: kCrateHmacSha256StateNewConstMeta,
-        argValues: [key],
+        constMeta: kCrateSha1HasherNewConstMeta,
+        argValues: [],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateHmacSha256StateNewConstMeta =>
-      const TaskConstMeta(debugName: "HmacSha256State_new", argNames: ["key"]);
+  TaskConstMeta get kCrateSha1HasherNewConstMeta =>
+      const TaskConstMeta(debugName: "Sha1Hasher_new", argNames: []);
 
   @override
-  void crateHmacSha256StateUpdate({
-    required HmacSha256State that,
+  void crateSha1HasherUpdate({
+    required Sha1Hasher that,
     required List<int> data,
   }) {
     return handler.executeSync(
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
-          sse_encode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHmacSha256State(
+          sse_encode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSha1Hasher(
             that,
             serializer,
           );
@@ -323,15 +392,15 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_unit,
           decodeErrorData: null,
         ),
-        constMeta: kCrateHmacSha256StateUpdateConstMeta,
+        constMeta: kCrateSha1HasherUpdateConstMeta,
         argValues: [that, data],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateHmacSha256StateUpdateConstMeta => const TaskConstMeta(
-    debugName: "HmacSha256State_update",
+  TaskConstMeta get kCrateSha1HasherUpdateConstMeta => const TaskConstMeta(
+    debugName: "Sha1Hasher_update",
     argNames: ["that", "data"],
   );
 
@@ -419,6 +488,92 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   );
 
   @override
+  U8Array32 crateSha256HmacHasherFinalize({required Sha256HmacHasher that}) {
+    return handler.executeSync(
+      SyncTask(
+        callFfi: () {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSha256HmacHasher(
+            that,
+            serializer,
+          );
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 7)!;
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_u_8_array_32,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateSha256HmacHasherFinalizeConstMeta,
+        argValues: [that],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateSha256HmacHasherFinalizeConstMeta =>
+      const TaskConstMeta(
+        debugName: "Sha256HmacHasher_finalize",
+        argNames: ["that"],
+      );
+
+  @override
+  Sha256HmacHasher? crateSha256HmacHasherNew({required List<int> key}) {
+    return handler.executeSync(
+      SyncTask(
+        callFfi: () {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_list_prim_u_8_loose(key, serializer);
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 8)!;
+        },
+        codec: SseCodec(
+          decodeSuccessData:
+              sse_decode_opt_box_autoadd_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSha256HmacHasher,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateSha256HmacHasherNewConstMeta,
+        argValues: [key],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateSha256HmacHasherNewConstMeta =>
+      const TaskConstMeta(debugName: "Sha256HmacHasher_new", argNames: ["key"]);
+
+  @override
+  void crateSha256HmacHasherUpdate({
+    required Sha256HmacHasher that,
+    required List<int> data,
+  }) {
+    return handler.executeSync(
+      SyncTask(
+        callFfi: () {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSha256HmacHasher(
+            that,
+            serializer,
+          );
+          sse_encode_list_prim_u_8_loose(data, serializer);
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 9)!;
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateSha256HmacHasherUpdateConstMeta,
+        argValues: [that, data],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateSha256HmacHasherUpdateConstMeta =>
+      const TaskConstMeta(
+        debugName: "Sha256HmacHasher_update",
+        argNames: ["that", "data"],
+      );
+
+  @override
   U8Array64 crateSha512HasherFinalize({required Sha512Hasher that}) {
     return handler.executeSync(
       SyncTask(
@@ -428,7 +583,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
             that,
             serializer,
           );
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 7)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 10)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_u_8_array_64,
@@ -452,7 +607,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 8)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 11)!;
         },
         codec: SseCodec(
           decodeSuccessData:
@@ -483,7 +638,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
             serializer,
           );
           sse_encode_list_prim_u_8_loose(data, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 9)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 12)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_unit,
@@ -502,6 +657,35 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   );
 
   @override
+  Uint8List? crateAes256Decrypt({
+    required List<int> ciphertext,
+    required List<int> key,
+  }) {
+    return handler.executeSync(
+      SyncTask(
+        callFfi: () {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_list_prim_u_8_loose(ciphertext, serializer);
+          sse_encode_list_prim_u_8_loose(key, serializer);
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 13)!;
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_opt_list_prim_u_8_strict,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateAes256DecryptConstMeta,
+        argValues: [ciphertext, key],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateAes256DecryptConstMeta => const TaskConstMeta(
+    debugName: "aes256_decrypt",
+    argNames: ["ciphertext", "key"],
+  );
+
+  @override
   Future<Uint8List?> crateAes256DecryptAsync({
     required List<int> ciphertext,
     required List<int> key,
@@ -515,7 +699,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 10,
+            funcId: 14,
             port: port_,
           );
         },
@@ -536,32 +720,32 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   );
 
   @override
-  Uint8List? crateAes256DecryptSync({
-    required List<int> ciphertext,
+  Uint8List? crateAes256Encrypt({
+    required List<int> plaintext,
     required List<int> key,
   }) {
     return handler.executeSync(
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
-          sse_encode_list_prim_u_8_loose(ciphertext, serializer);
+          sse_encode_list_prim_u_8_loose(plaintext, serializer);
           sse_encode_list_prim_u_8_loose(key, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 11)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 15)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_opt_list_prim_u_8_strict,
           decodeErrorData: null,
         ),
-        constMeta: kCrateAes256DecryptSyncConstMeta,
-        argValues: [ciphertext, key],
+        constMeta: kCrateAes256EncryptConstMeta,
+        argValues: [plaintext, key],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateAes256DecryptSyncConstMeta => const TaskConstMeta(
-    debugName: "aes256_decrypt_sync",
-    argNames: ["ciphertext", "key"],
+  TaskConstMeta get kCrateAes256EncryptConstMeta => const TaskConstMeta(
+    debugName: "aes256_encrypt",
+    argNames: ["plaintext", "key"],
   );
 
   @override
@@ -578,7 +762,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 12,
+            funcId: 16,
             port: port_,
           );
         },
@@ -599,36 +783,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   );
 
   @override
-  Uint8List? crateAes256EncryptSync({
-    required List<int> plaintext,
-    required List<int> key,
-  }) {
-    return handler.executeSync(
-      SyncTask(
-        callFfi: () {
-          final serializer = SseSerializer(generalizedFrbRustBinding);
-          sse_encode_list_prim_u_8_loose(plaintext, serializer);
-          sse_encode_list_prim_u_8_loose(key, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 13)!;
-        },
-        codec: SseCodec(
-          decodeSuccessData: sse_decode_opt_list_prim_u_8_strict,
-          decodeErrorData: null,
-        ),
-        constMeta: kCrateAes256EncryptSyncConstMeta,
-        argValues: [plaintext, key],
-        apiImpl: this,
-      ),
-    );
-  }
-
-  TaskConstMeta get kCrateAes256EncryptSyncConstMeta => const TaskConstMeta(
-    debugName: "aes256_encrypt_sync",
-    argNames: ["plaintext", "key"],
-  );
-
-  @override
-  (Uint8List, U8Array32)? crateEncryptThenMacSync({
+  (Uint8List, U8Array32)? crateEncryptThenHmac({
     required List<int> plaintext,
     required List<int> encKey,
     required List<int> macKey,
@@ -640,73 +795,132 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           sse_encode_list_prim_u_8_loose(plaintext, serializer);
           sse_encode_list_prim_u_8_loose(encKey, serializer);
           sse_encode_list_prim_u_8_loose(macKey, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 14)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 17)!;
         },
         codec: SseCodec(
           decodeSuccessData:
               sse_decode_opt_box_autoadd_record_list_prim_u_8_strict_u_8_array_32,
           decodeErrorData: null,
         ),
-        constMeta: kCrateEncryptThenMacSyncConstMeta,
+        constMeta: kCrateEncryptThenHmacConstMeta,
         argValues: [plaintext, encKey, macKey],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateEncryptThenMacSyncConstMeta => const TaskConstMeta(
-    debugName: "encrypt_then_mac_sync",
+  TaskConstMeta get kCrateEncryptThenHmacConstMeta => const TaskConstMeta(
+    debugName: "encrypt_then_hmac",
     argNames: ["plaintext", "encKey", "macKey"],
   );
 
   @override
-  Uint8List? crateFromHexSync({required String hexString}) {
+  Future<(Uint8List, U8Array32)?> crateEncryptThenHmacAsync({
+    required List<int> plaintext,
+    required List<int> encKey,
+    required List<int> macKey,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_list_prim_u_8_loose(plaintext, serializer);
+          sse_encode_list_prim_u_8_loose(encKey, serializer);
+          sse_encode_list_prim_u_8_loose(macKey, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 18,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData:
+              sse_decode_opt_box_autoadd_record_list_prim_u_8_strict_u_8_array_32,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateEncryptThenHmacAsyncConstMeta,
+        argValues: [plaintext, encKey, macKey],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateEncryptThenHmacAsyncConstMeta => const TaskConstMeta(
+    debugName: "encrypt_then_hmac_async",
+    argNames: ["plaintext", "encKey", "macKey"],
+  );
+
+  @override
+  Uint8List? crateFromHex({required String hexString}) {
     return handler.executeSync(
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_String(hexString, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 15)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 19)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_opt_list_prim_u_8_strict,
           decodeErrorData: null,
         ),
-        constMeta: kCrateFromHexSyncConstMeta,
+        constMeta: kCrateFromHexConstMeta,
         argValues: [hexString],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateFromHexSyncConstMeta =>
-      const TaskConstMeta(debugName: "from_hex_sync", argNames: ["hexString"]);
+  TaskConstMeta get kCrateFromHexConstMeta =>
+      const TaskConstMeta(debugName: "from_hex", argNames: ["hexString"]);
 
   @override
-  BigInt crateHashSizeSync({required String algorithm}) {
+  List<String> crateGetAllAlgorithms() {
+    return handler.executeSync(
+      SyncTask(
+        callFfi: () {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 20)!;
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_list_String,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateGetAllAlgorithmsConstMeta,
+        argValues: [],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateGetAllAlgorithmsConstMeta =>
+      const TaskConstMeta(debugName: "get_all_algorithms", argNames: []);
+
+  @override
+  BigInt crateHashSize({required String algorithm}) {
     return handler.executeSync(
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_String(algorithm, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 16)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 21)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_usize,
           decodeErrorData: null,
         ),
-        constMeta: kCrateHashSizeSyncConstMeta,
+        constMeta: kCrateHashSizeConstMeta,
         argValues: [algorithm],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateHashSizeSyncConstMeta =>
-      const TaskConstMeta(debugName: "hash_size_sync", argNames: ["algorithm"]);
+  TaskConstMeta get kCrateHashSizeConstMeta =>
+      const TaskConstMeta(debugName: "hash_size", argNames: ["algorithm"]);
 
   @override
-  Uint8List? crateHashThenEncryptSync({
+  Uint8List? crateHashThenEncrypt({
     required List<int> data,
     required List<int> key,
   }) {
@@ -716,110 +930,255 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_list_prim_u_8_loose(data, serializer);
           sse_encode_list_prim_u_8_loose(key, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 17)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 22)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_opt_list_prim_u_8_strict,
           decodeErrorData: null,
         ),
-        constMeta: kCrateHashThenEncryptSyncConstMeta,
+        constMeta: kCrateHashThenEncryptConstMeta,
         argValues: [data, key],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateHashThenEncryptSyncConstMeta => const TaskConstMeta(
-    debugName: "hash_then_encrypt_sync",
+  TaskConstMeta get kCrateHashThenEncryptConstMeta => const TaskConstMeta(
+    debugName: "hash_then_encrypt",
     argNames: ["data", "key"],
   );
 
   @override
-  U8Array16 crateHmacMd5Sync({
-    required List<int> key,
+  Future<Uint8List?> crateHashThenEncryptAsync({
     required List<int> data,
+    required List<int> key,
   }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_list_prim_u_8_loose(data, serializer);
+          sse_encode_list_prim_u_8_loose(key, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 23,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_opt_list_prim_u_8_strict,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateHashThenEncryptAsyncConstMeta,
+        argValues: [data, key],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateHashThenEncryptAsyncConstMeta => const TaskConstMeta(
+    debugName: "hash_then_encrypt_async",
+    argNames: ["data", "key"],
+  );
+
+  @override
+  U8Array16 crateHmacMd5({required List<int> key, required List<int> data}) {
     return handler.executeSync(
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_list_prim_u_8_loose(key, serializer);
           sse_encode_list_prim_u_8_loose(data, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 18)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 24)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_u_8_array_16,
           decodeErrorData: null,
         ),
-        constMeta: kCrateHmacMd5SyncConstMeta,
+        constMeta: kCrateHmacMd5ConstMeta,
         argValues: [key, data],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateHmacMd5SyncConstMeta => const TaskConstMeta(
-    debugName: "hmac_md5_sync",
+  TaskConstMeta get kCrateHmacMd5ConstMeta =>
+      const TaskConstMeta(debugName: "hmac_md5", argNames: ["key", "data"]);
+
+  @override
+  Future<U8Array16> crateHmacMd5Async({
+    required List<int> key,
+    required List<int> data,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_list_prim_u_8_loose(key, serializer);
+          sse_encode_list_prim_u_8_loose(data, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 25,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_u_8_array_16,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateHmacMd5AsyncConstMeta,
+        argValues: [key, data],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateHmacMd5AsyncConstMeta => const TaskConstMeta(
+    debugName: "hmac_md5_async",
     argNames: ["key", "data"],
   );
 
   @override
-  U8Array20 crateHmacSha1Sync({
-    required List<int> key,
-    required List<int> data,
-  }) {
+  U8Array20 crateHmacSha1({required List<int> key, required List<int> data}) {
     return handler.executeSync(
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_list_prim_u_8_loose(key, serializer);
           sse_encode_list_prim_u_8_loose(data, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 19)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 26)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_u_8_array_20,
           decodeErrorData: null,
         ),
-        constMeta: kCrateHmacSha1SyncConstMeta,
+        constMeta: kCrateHmacSha1ConstMeta,
         argValues: [key, data],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateHmacSha1SyncConstMeta => const TaskConstMeta(
-    debugName: "hmac_sha1_sync",
+  TaskConstMeta get kCrateHmacSha1ConstMeta =>
+      const TaskConstMeta(debugName: "hmac_sha1", argNames: ["key", "data"]);
+
+  @override
+  Future<U8Array20> crateHmacSha1Async({
+    required List<int> key,
+    required List<int> data,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_list_prim_u_8_loose(key, serializer);
+          sse_encode_list_prim_u_8_loose(data, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 27,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_u_8_array_20,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateHmacSha1AsyncConstMeta,
+        argValues: [key, data],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateHmacSha1AsyncConstMeta => const TaskConstMeta(
+    debugName: "hmac_sha1_async",
     argNames: ["key", "data"],
   );
 
   @override
-  U8Array28 crateHmacSha224Sync({
-    required List<int> key,
-    required List<int> data,
-  }) {
+  U8Array28 crateHmacSha224({required List<int> key, required List<int> data}) {
     return handler.executeSync(
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_list_prim_u_8_loose(key, serializer);
           sse_encode_list_prim_u_8_loose(data, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 20)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 28)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_u_8_array_28,
           decodeErrorData: null,
         ),
-        constMeta: kCrateHmacSha224SyncConstMeta,
+        constMeta: kCrateHmacSha224ConstMeta,
         argValues: [key, data],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateHmacSha224SyncConstMeta => const TaskConstMeta(
-    debugName: "hmac_sha224_sync",
+  TaskConstMeta get kCrateHmacSha224ConstMeta =>
+      const TaskConstMeta(debugName: "hmac_sha224", argNames: ["key", "data"]);
+
+  @override
+  Future<U8Array28> crateHmacSha224Async({
+    required List<int> key,
+    required List<int> data,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_list_prim_u_8_loose(key, serializer);
+          sse_encode_list_prim_u_8_loose(data, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 29,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_u_8_array_28,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateHmacSha224AsyncConstMeta,
+        argValues: [key, data],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateHmacSha224AsyncConstMeta => const TaskConstMeta(
+    debugName: "hmac_sha224_async",
     argNames: ["key", "data"],
   );
+
+  @override
+  U8Array32 crateHmacSha256({required List<int> key, required List<int> data}) {
+    return handler.executeSync(
+      SyncTask(
+        callFfi: () {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_list_prim_u_8_loose(key, serializer);
+          sse_encode_list_prim_u_8_loose(data, serializer);
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 30)!;
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_u_8_array_32,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateHmacSha256ConstMeta,
+        argValues: [key, data],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateHmacSha256ConstMeta =>
+      const TaskConstMeta(debugName: "hmac_sha256", argNames: ["key", "data"]);
 
   @override
   Future<U8Array32> crateHmacSha256Async({
@@ -835,7 +1194,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 21,
+            funcId: 31,
             port: port_,
           );
         },
@@ -856,7 +1215,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   );
 
   @override
-  List<U8Array32> crateHmacSha256BatchSync({
+  List<U8Array32> crateHmacSha256Batch({
     required List<int> key,
     required List<Uint8List> messages,
   }) {
@@ -866,81 +1225,139 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_list_prim_u_8_loose(key, serializer);
           sse_encode_list_list_prim_u_8_strict(messages, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 22)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 32)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_list_u_8_array_32,
           decodeErrorData: null,
         ),
-        constMeta: kCrateHmacSha256BatchSyncConstMeta,
+        constMeta: kCrateHmacSha256BatchConstMeta,
         argValues: [key, messages],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateHmacSha256BatchSyncConstMeta => const TaskConstMeta(
-    debugName: "hmac_sha256_batch_sync",
+  TaskConstMeta get kCrateHmacSha256BatchConstMeta => const TaskConstMeta(
+    debugName: "hmac_sha256_batch",
     argNames: ["key", "messages"],
   );
 
   @override
-  U8Array32 crateHmacSha256Sync({
+  Future<List<U8Array32>> crateHmacSha256BatchAsync({
     required List<int> key,
-    required List<int> data,
+    required List<Uint8List> messages,
   }) {
-    return handler.executeSync(
-      SyncTask(
-        callFfi: () {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_list_prim_u_8_loose(key, serializer);
-          sse_encode_list_prim_u_8_loose(data, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 23)!;
+          sse_encode_list_list_prim_u_8_strict(messages, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 33,
+            port: port_,
+          );
         },
         codec: SseCodec(
-          decodeSuccessData: sse_decode_u_8_array_32,
+          decodeSuccessData: sse_decode_list_u_8_array_32,
           decodeErrorData: null,
         ),
-        constMeta: kCrateHmacSha256SyncConstMeta,
-        argValues: [key, data],
+        constMeta: kCrateHmacSha256BatchAsyncConstMeta,
+        argValues: [key, messages],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateHmacSha256SyncConstMeta => const TaskConstMeta(
-    debugName: "hmac_sha256_sync",
-    argNames: ["key", "data"],
+  TaskConstMeta get kCrateHmacSha256BatchAsyncConstMeta => const TaskConstMeta(
+    debugName: "hmac_sha256_batch_async",
+    argNames: ["key", "messages"],
   );
 
   @override
-  U8Array48 crateHmacSha384Sync({
-    required List<int> key,
-    required List<int> data,
-  }) {
+  U8Array48 crateHmacSha384({required List<int> key, required List<int> data}) {
     return handler.executeSync(
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_list_prim_u_8_loose(key, serializer);
           sse_encode_list_prim_u_8_loose(data, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 24)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 34)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_u_8_array_48,
           decodeErrorData: null,
         ),
-        constMeta: kCrateHmacSha384SyncConstMeta,
+        constMeta: kCrateHmacSha384ConstMeta,
         argValues: [key, data],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateHmacSha384SyncConstMeta => const TaskConstMeta(
-    debugName: "hmac_sha384_sync",
+  TaskConstMeta get kCrateHmacSha384ConstMeta =>
+      const TaskConstMeta(debugName: "hmac_sha384", argNames: ["key", "data"]);
+
+  @override
+  Future<U8Array48> crateHmacSha384Async({
+    required List<int> key,
+    required List<int> data,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_list_prim_u_8_loose(key, serializer);
+          sse_encode_list_prim_u_8_loose(data, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 35,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_u_8_array_48,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateHmacSha384AsyncConstMeta,
+        argValues: [key, data],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateHmacSha384AsyncConstMeta => const TaskConstMeta(
+    debugName: "hmac_sha384_async",
     argNames: ["key", "data"],
   );
+
+  @override
+  U8Array64 crateHmacSha512({required List<int> key, required List<int> data}) {
+    return handler.executeSync(
+      SyncTask(
+        callFfi: () {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_list_prim_u_8_loose(key, serializer);
+          sse_encode_list_prim_u_8_loose(data, serializer);
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 36)!;
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_u_8_array_64,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateHmacSha512ConstMeta,
+        argValues: [key, data],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateHmacSha512ConstMeta =>
+      const TaskConstMeta(debugName: "hmac_sha512", argNames: ["key", "data"]);
 
   @override
   Future<U8Array64> crateHmacSha512Async({
@@ -956,7 +1373,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 25,
+            funcId: 37,
             port: port_,
           );
         },
@@ -977,33 +1394,90 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   );
 
   @override
-  U8Array64 crateHmacSha512Sync({
+  List<U8Array64> crateHmacSha512Batch({
     required List<int> key,
-    required List<int> data,
+    required List<Uint8List> messages,
   }) {
     return handler.executeSync(
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_list_prim_u_8_loose(key, serializer);
-          sse_encode_list_prim_u_8_loose(data, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 26)!;
+          sse_encode_list_list_prim_u_8_strict(messages, serializer);
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 38)!;
         },
         codec: SseCodec(
-          decodeSuccessData: sse_decode_u_8_array_64,
+          decodeSuccessData: sse_decode_list_u_8_array_64,
           decodeErrorData: null,
         ),
-        constMeta: kCrateHmacSha512SyncConstMeta,
-        argValues: [key, data],
+        constMeta: kCrateHmacSha512BatchConstMeta,
+        argValues: [key, messages],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateHmacSha512SyncConstMeta => const TaskConstMeta(
-    debugName: "hmac_sha512_sync",
-    argNames: ["key", "data"],
+  TaskConstMeta get kCrateHmacSha512BatchConstMeta => const TaskConstMeta(
+    debugName: "hmac_sha512_batch",
+    argNames: ["key", "messages"],
   );
+
+  @override
+  Future<List<U8Array64>> crateHmacSha512BatchAsync({
+    required List<int> key,
+    required List<Uint8List> messages,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_list_prim_u_8_loose(key, serializer);
+          sse_encode_list_list_prim_u_8_strict(messages, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 39,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_list_u_8_array_64,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateHmacSha512BatchAsyncConstMeta,
+        argValues: [key, messages],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateHmacSha512BatchAsyncConstMeta => const TaskConstMeta(
+    debugName: "hmac_sha512_batch_async",
+    argNames: ["key", "messages"],
+  );
+
+  @override
+  U8Array16 crateMd5({required List<int> data}) {
+    return handler.executeSync(
+      SyncTask(
+        callFfi: () {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_list_prim_u_8_loose(data, serializer);
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 40)!;
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_u_8_array_16,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateMd5ConstMeta,
+        argValues: [data],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateMd5ConstMeta =>
+      const TaskConstMeta(debugName: "md5", argNames: ["data"]);
 
   @override
   Future<U8Array16> crateMd5Async({required List<int> data}) {
@@ -1015,7 +1489,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 27,
+            funcId: 41,
             port: port_,
           );
         },
@@ -1034,27 +1508,27 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       const TaskConstMeta(debugName: "md5_async", argNames: ["data"]);
 
   @override
-  U8Array16 crateMd5Sync({required List<int> data}) {
+  U8Array20 crateSha1({required List<int> data}) {
     return handler.executeSync(
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_list_prim_u_8_loose(data, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 28)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 42)!;
         },
         codec: SseCodec(
-          decodeSuccessData: sse_decode_u_8_array_16,
+          decodeSuccessData: sse_decode_u_8_array_20,
           decodeErrorData: null,
         ),
-        constMeta: kCrateMd5SyncConstMeta,
+        constMeta: kCrateSha1ConstMeta,
         argValues: [data],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateMd5SyncConstMeta =>
-      const TaskConstMeta(debugName: "md5_sync", argNames: ["data"]);
+  TaskConstMeta get kCrateSha1ConstMeta =>
+      const TaskConstMeta(debugName: "sha1", argNames: ["data"]);
 
   @override
   Future<U8Array20> crateSha1Async({required List<int> data}) {
@@ -1066,7 +1540,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 29,
+            funcId: 43,
             port: port_,
           );
         },
@@ -1085,50 +1559,78 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       const TaskConstMeta(debugName: "sha1_async", argNames: ["data"]);
 
   @override
-  U8Array20 crateSha1Sync({required List<int> data}) {
+  U8Array28 crateSha224({required List<int> data}) {
     return handler.executeSync(
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_list_prim_u_8_loose(data, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 30)!;
-        },
-        codec: SseCodec(
-          decodeSuccessData: sse_decode_u_8_array_20,
-          decodeErrorData: null,
-        ),
-        constMeta: kCrateSha1SyncConstMeta,
-        argValues: [data],
-        apiImpl: this,
-      ),
-    );
-  }
-
-  TaskConstMeta get kCrateSha1SyncConstMeta =>
-      const TaskConstMeta(debugName: "sha1_sync", argNames: ["data"]);
-
-  @override
-  U8Array28 crateSha224Sync({required List<int> data}) {
-    return handler.executeSync(
-      SyncTask(
-        callFfi: () {
-          final serializer = SseSerializer(generalizedFrbRustBinding);
-          sse_encode_list_prim_u_8_loose(data, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 31)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 44)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_u_8_array_28,
           decodeErrorData: null,
         ),
-        constMeta: kCrateSha224SyncConstMeta,
+        constMeta: kCrateSha224ConstMeta,
         argValues: [data],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateSha224SyncConstMeta =>
-      const TaskConstMeta(debugName: "sha224_sync", argNames: ["data"]);
+  TaskConstMeta get kCrateSha224ConstMeta =>
+      const TaskConstMeta(debugName: "sha224", argNames: ["data"]);
+
+  @override
+  Future<U8Array28> crateSha224Async({required List<int> data}) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_list_prim_u_8_loose(data, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 45,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_u_8_array_28,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateSha224AsyncConstMeta,
+        argValues: [data],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateSha224AsyncConstMeta =>
+      const TaskConstMeta(debugName: "sha224_async", argNames: ["data"]);
+
+  @override
+  U8Array32 crateSha256({required List<int> data}) {
+    return handler.executeSync(
+      SyncTask(
+        callFfi: () {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_list_prim_u_8_loose(data, serializer);
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 46)!;
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_u_8_array_32,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateSha256ConstMeta,
+        argValues: [data],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateSha256ConstMeta =>
+      const TaskConstMeta(debugName: "sha256", argNames: ["data"]);
 
   @override
   Future<U8Array32> crateSha256Async({required List<int> data}) {
@@ -1140,7 +1642,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 32,
+            funcId: 47,
             port: port_,
           );
         },
@@ -1159,50 +1661,82 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       const TaskConstMeta(debugName: "sha256_async", argNames: ["data"]);
 
   @override
-  List<U8Array32> crateSha256BatchSync({required List<Uint8List> inputs}) {
+  List<U8Array32> crateSha256Batch({required List<Uint8List> inputs}) {
     return handler.executeSync(
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_list_list_prim_u_8_strict(inputs, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 33)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 48)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_list_u_8_array_32,
           decodeErrorData: null,
         ),
-        constMeta: kCrateSha256BatchSyncConstMeta,
+        constMeta: kCrateSha256BatchConstMeta,
         argValues: [inputs],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateSha256BatchSyncConstMeta =>
-      const TaskConstMeta(debugName: "sha256_batch_sync", argNames: ["inputs"]);
+  TaskConstMeta get kCrateSha256BatchConstMeta =>
+      const TaskConstMeta(debugName: "sha256_batch", argNames: ["inputs"]);
 
   @override
-  U8Array32 crateSha256Sync({required List<int> data}) {
+  Future<List<U8Array32>> crateSha256BatchAsync({
+    required List<Uint8List> inputs,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_list_list_prim_u_8_strict(inputs, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 49,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_list_u_8_array_32,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateSha256BatchAsyncConstMeta,
+        argValues: [inputs],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateSha256BatchAsyncConstMeta => const TaskConstMeta(
+    debugName: "sha256_batch_async",
+    argNames: ["inputs"],
+  );
+
+  @override
+  U8Array48 crateSha384({required List<int> data}) {
     return handler.executeSync(
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_list_prim_u_8_loose(data, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 34)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 50)!;
         },
         codec: SseCodec(
-          decodeSuccessData: sse_decode_u_8_array_32,
+          decodeSuccessData: sse_decode_u_8_array_48,
           decodeErrorData: null,
         ),
-        constMeta: kCrateSha256SyncConstMeta,
+        constMeta: kCrateSha384ConstMeta,
         argValues: [data],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateSha256SyncConstMeta =>
-      const TaskConstMeta(debugName: "sha256_sync", argNames: ["data"]);
+  TaskConstMeta get kCrateSha384ConstMeta =>
+      const TaskConstMeta(debugName: "sha384", argNames: ["data"]);
 
   @override
   Future<U8Array48> crateSha384Async({required List<int> data}) {
@@ -1214,7 +1748,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 35,
+            funcId: 51,
             port: port_,
           );
         },
@@ -1233,73 +1767,129 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       const TaskConstMeta(debugName: "sha384_async", argNames: ["data"]);
 
   @override
-  U8Array48 crateSha384Sync({required List<int> data}) {
+  U8Array64 crateSha512({required List<int> data}) {
     return handler.executeSync(
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_list_prim_u_8_loose(data, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 36)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 52)!;
         },
         codec: SseCodec(
-          decodeSuccessData: sse_decode_u_8_array_48,
+          decodeSuccessData: sse_decode_u_8_array_64,
           decodeErrorData: null,
         ),
-        constMeta: kCrateSha384SyncConstMeta,
+        constMeta: kCrateSha512ConstMeta,
         argValues: [data],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateSha384SyncConstMeta =>
-      const TaskConstMeta(debugName: "sha384_sync", argNames: ["data"]);
+  TaskConstMeta get kCrateSha512ConstMeta =>
+      const TaskConstMeta(debugName: "sha512", argNames: ["data"]);
 
   @override
-  U8Array28 crateSha512224Sync({required List<int> data}) {
+  U8Array28 crateSha512224({required List<int> data}) {
     return handler.executeSync(
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_list_prim_u_8_loose(data, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 37)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 53)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_u_8_array_28,
           decodeErrorData: null,
         ),
-        constMeta: kCrateSha512224SyncConstMeta,
+        constMeta: kCrateSha512224ConstMeta,
         argValues: [data],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateSha512224SyncConstMeta =>
-      const TaskConstMeta(debugName: "sha512_224_sync", argNames: ["data"]);
+  TaskConstMeta get kCrateSha512224ConstMeta =>
+      const TaskConstMeta(debugName: "sha512_224", argNames: ["data"]);
 
   @override
-  U8Array32 crateSha512256Sync({required List<int> data}) {
+  Future<U8Array28> crateSha512224Async({required List<int> data}) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_list_prim_u_8_loose(data, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 54,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_u_8_array_28,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateSha512224AsyncConstMeta,
+        argValues: [data],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateSha512224AsyncConstMeta =>
+      const TaskConstMeta(debugName: "sha512_224_async", argNames: ["data"]);
+
+  @override
+  U8Array32 crateSha512256({required List<int> data}) {
     return handler.executeSync(
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_list_prim_u_8_loose(data, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 38)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 55)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_u_8_array_32,
           decodeErrorData: null,
         ),
-        constMeta: kCrateSha512256SyncConstMeta,
+        constMeta: kCrateSha512256ConstMeta,
         argValues: [data],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateSha512256SyncConstMeta =>
-      const TaskConstMeta(debugName: "sha512_256_sync", argNames: ["data"]);
+  TaskConstMeta get kCrateSha512256ConstMeta =>
+      const TaskConstMeta(debugName: "sha512_256", argNames: ["data"]);
+
+  @override
+  Future<U8Array32> crateSha512256Async({required List<int> data}) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_list_prim_u_8_loose(data, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 56,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_u_8_array_32,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateSha512256AsyncConstMeta,
+        argValues: [data],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateSha512256AsyncConstMeta =>
+      const TaskConstMeta(debugName: "sha512_256_async", argNames: ["data"]);
 
   @override
   Future<U8Array64> crateSha512Async({required List<int> data}) {
@@ -1311,7 +1901,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 39,
+            funcId: 57,
             port: port_,
           );
         },
@@ -1330,53 +1920,85 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       const TaskConstMeta(debugName: "sha512_async", argNames: ["data"]);
 
   @override
-  U8Array64 crateSha512Sync({required List<int> data}) {
+  List<U8Array64> crateSha512Batch({required List<Uint8List> inputs}) {
     return handler.executeSync(
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
-          sse_encode_list_prim_u_8_loose(data, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 40)!;
+          sse_encode_list_list_prim_u_8_strict(inputs, serializer);
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 58)!;
         },
         codec: SseCodec(
-          decodeSuccessData: sse_decode_u_8_array_64,
+          decodeSuccessData: sse_decode_list_u_8_array_64,
           decodeErrorData: null,
         ),
-        constMeta: kCrateSha512SyncConstMeta,
-        argValues: [data],
+        constMeta: kCrateSha512BatchConstMeta,
+        argValues: [inputs],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateSha512SyncConstMeta =>
-      const TaskConstMeta(debugName: "sha512_sync", argNames: ["data"]);
+  TaskConstMeta get kCrateSha512BatchConstMeta =>
+      const TaskConstMeta(debugName: "sha512_batch", argNames: ["inputs"]);
 
   @override
-  String crateToHexSync({required List<int> bytes}) {
+  Future<List<U8Array64>> crateSha512BatchAsync({
+    required List<Uint8List> inputs,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_list_list_prim_u_8_strict(inputs, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 59,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_list_u_8_array_64,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateSha512BatchAsyncConstMeta,
+        argValues: [inputs],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateSha512BatchAsyncConstMeta => const TaskConstMeta(
+    debugName: "sha512_batch_async",
+    argNames: ["inputs"],
+  );
+
+  @override
+  String crateToHex({required List<int> bytes}) {
     return handler.executeSync(
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_list_prim_u_8_loose(bytes, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 41)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 60)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_String,
           decodeErrorData: null,
         ),
-        constMeta: kCrateToHexSyncConstMeta,
+        constMeta: kCrateToHexConstMeta,
         argValues: [bytes],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateToHexSyncConstMeta =>
-      const TaskConstMeta(debugName: "to_hex_sync", argNames: ["bytes"]);
+  TaskConstMeta get kCrateToHexConstMeta =>
+      const TaskConstMeta(debugName: "to_hex", argNames: ["bytes"]);
 
   @override
-  Uint8List? crateVerifyThenDecryptSync({
+  Uint8List? crateVerifyHmacThenDecrypt({
     required List<int> ciphertext,
     required List<int> mac,
     required List<int> encKey,
@@ -1390,31 +2012,70 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           sse_encode_list_prim_u_8_loose(mac, serializer);
           sse_encode_list_prim_u_8_loose(encKey, serializer);
           sse_encode_list_prim_u_8_loose(macKey, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 42)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 61)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_opt_list_prim_u_8_strict,
           decodeErrorData: null,
         ),
-        constMeta: kCrateVerifyThenDecryptSyncConstMeta,
+        constMeta: kCrateVerifyHmacThenDecryptConstMeta,
         argValues: [ciphertext, mac, encKey, macKey],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateVerifyThenDecryptSyncConstMeta => const TaskConstMeta(
-    debugName: "verify_then_decrypt_sync",
+  TaskConstMeta get kCrateVerifyHmacThenDecryptConstMeta => const TaskConstMeta(
+    debugName: "verify_hmac_then_decrypt",
     argNames: ["ciphertext", "mac", "encKey", "macKey"],
   );
 
+  @override
+  Future<Uint8List?> crateVerifyHmacThenDecryptAsync({
+    required List<int> ciphertext,
+    required List<int> mac,
+    required List<int> encKey,
+    required List<int> macKey,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_list_prim_u_8_loose(ciphertext, serializer);
+          sse_encode_list_prim_u_8_loose(mac, serializer);
+          sse_encode_list_prim_u_8_loose(encKey, serializer);
+          sse_encode_list_prim_u_8_loose(macKey, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 62,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_opt_list_prim_u_8_strict,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateVerifyHmacThenDecryptAsyncConstMeta,
+        argValues: [ciphertext, mac, encKey, macKey],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateVerifyHmacThenDecryptAsyncConstMeta =>
+      const TaskConstMeta(
+        debugName: "verify_hmac_then_decrypt_async",
+        argNames: ["ciphertext", "mac", "encKey", "macKey"],
+      );
+
   RustArcIncrementStrongCountFnType
-  get rust_arc_increment_strong_count_HmacSha256State => wire
-      .rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHmacSha256State;
+  get rust_arc_increment_strong_count_Sha1Hasher => wire
+      .rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSha1Hasher;
 
   RustArcDecrementStrongCountFnType
-  get rust_arc_decrement_strong_count_HmacSha256State => wire
-      .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHmacSha256State;
+  get rust_arc_decrement_strong_count_Sha1Hasher => wire
+      .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSha1Hasher;
 
   RustArcIncrementStrongCountFnType
   get rust_arc_increment_strong_count_Sha256Hasher => wire
@@ -1425,6 +2086,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSha256Hasher;
 
   RustArcIncrementStrongCountFnType
+  get rust_arc_increment_strong_count_Sha256HmacHasher => wire
+      .rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSha256HmacHasher;
+
+  RustArcDecrementStrongCountFnType
+  get rust_arc_decrement_strong_count_Sha256HmacHasher => wire
+      .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSha256HmacHasher;
+
+  RustArcIncrementStrongCountFnType
   get rust_arc_increment_strong_count_Sha512Hasher => wire
       .rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSha512Hasher;
 
@@ -1433,12 +2102,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSha512Hasher;
 
   @protected
-  HmacSha256State
-  dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHmacSha256State(
+  Sha1Hasher
+  dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSha1Hasher(
     dynamic raw,
   ) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
-    return HmacSha256StateImpl.frbInternalDcoDecode(raw as List<dynamic>);
+    return Sha1HasherImpl.frbInternalDcoDecode(raw as List<dynamic>);
   }
 
   @protected
@@ -1451,6 +2120,15 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  Sha256HmacHasher
+  dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSha256HmacHasher(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return Sha256HmacHasherImpl.frbInternalDcoDecode(raw as List<dynamic>);
+  }
+
+  @protected
   Sha512Hasher
   dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSha512Hasher(
     dynamic raw,
@@ -1460,12 +2138,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  HmacSha256State
-  dco_decode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHmacSha256State(
+  Sha1Hasher
+  dco_decode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSha1Hasher(
     dynamic raw,
   ) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
-    return HmacSha256StateImpl.frbInternalDcoDecode(raw as List<dynamic>);
+    return Sha1HasherImpl.frbInternalDcoDecode(raw as List<dynamic>);
   }
 
   @protected
@@ -1478,6 +2156,15 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  Sha256HmacHasher
+  dco_decode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSha256HmacHasher(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return Sha256HmacHasherImpl.frbInternalDcoDecode(raw as List<dynamic>);
+  }
+
+  @protected
   Sha512Hasher
   dco_decode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSha512Hasher(
     dynamic raw,
@@ -1487,12 +2174,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  HmacSha256State
-  dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHmacSha256State(
+  Sha1Hasher
+  dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSha1Hasher(
     dynamic raw,
   ) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
-    return HmacSha256StateImpl.frbInternalDcoDecode(raw as List<dynamic>);
+    return Sha1HasherImpl.frbInternalDcoDecode(raw as List<dynamic>);
   }
 
   @protected
@@ -1502,6 +2189,15 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   ) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return Sha256HasherImpl.frbInternalDcoDecode(raw as List<dynamic>);
+  }
+
+  @protected
+  Sha256HmacHasher
+  dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSha256HmacHasher(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return Sha256HmacHasherImpl.frbInternalDcoDecode(raw as List<dynamic>);
   }
 
   @protected
@@ -1520,10 +2216,27 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  Sha256HmacHasher
+  dco_decode_box_autoadd_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSha256HmacHasher(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSha256HmacHasher(
+      raw,
+    );
+  }
+
+  @protected
   (Uint8List, U8Array32)
   dco_decode_box_autoadd_record_list_prim_u_8_strict_u_8_array_32(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw as (Uint8List, U8Array32);
+  }
+
+  @protected
+  List<String> dco_decode_list_String(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return (raw as List<dynamic>).map(dco_decode_String).toList();
   }
 
   @protected
@@ -1548,6 +2261,25 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   List<U8Array32> dco_decode_list_u_8_array_32(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return (raw as List<dynamic>).map(dco_decode_u_8_array_32).toList();
+  }
+
+  @protected
+  List<U8Array64> dco_decode_list_u_8_array_64(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return (raw as List<dynamic>).map(dco_decode_u_8_array_64).toList();
+  }
+
+  @protected
+  Sha256HmacHasher?
+  dco_decode_opt_box_autoadd_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSha256HmacHasher(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null
+        ? null
+        : dco_decode_box_autoadd_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSha256HmacHasher(
+            raw,
+          );
   }
 
   @protected
@@ -1637,12 +2369,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  HmacSha256State
-  sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHmacSha256State(
+  Sha1Hasher
+  sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSha1Hasher(
     SseDeserializer deserializer,
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
-    return HmacSha256StateImpl.frbInternalSseDecode(
+    return Sha1HasherImpl.frbInternalSseDecode(
       sse_decode_usize(deserializer),
       sse_decode_i_32(deserializer),
     );
@@ -1661,6 +2393,18 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  Sha256HmacHasher
+  sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSha256HmacHasher(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return Sha256HmacHasherImpl.frbInternalSseDecode(
+      sse_decode_usize(deserializer),
+      sse_decode_i_32(deserializer),
+    );
+  }
+
+  @protected
   Sha512Hasher
   sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSha512Hasher(
     SseDeserializer deserializer,
@@ -1673,12 +2417,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  HmacSha256State
-  sse_decode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHmacSha256State(
+  Sha1Hasher
+  sse_decode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSha1Hasher(
     SseDeserializer deserializer,
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
-    return HmacSha256StateImpl.frbInternalSseDecode(
+    return Sha1HasherImpl.frbInternalSseDecode(
       sse_decode_usize(deserializer),
       sse_decode_i_32(deserializer),
     );
@@ -1697,6 +2441,18 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  Sha256HmacHasher
+  sse_decode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSha256HmacHasher(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return Sha256HmacHasherImpl.frbInternalSseDecode(
+      sse_decode_usize(deserializer),
+      sse_decode_i_32(deserializer),
+    );
+  }
+
+  @protected
   Sha512Hasher
   sse_decode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSha512Hasher(
     SseDeserializer deserializer,
@@ -1709,12 +2465,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  HmacSha256State
-  sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHmacSha256State(
+  Sha1Hasher
+  sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSha1Hasher(
     SseDeserializer deserializer,
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
-    return HmacSha256StateImpl.frbInternalSseDecode(
+    return Sha1HasherImpl.frbInternalSseDecode(
       sse_decode_usize(deserializer),
       sse_decode_i_32(deserializer),
     );
@@ -1727,6 +2483,18 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return Sha256HasherImpl.frbInternalSseDecode(
+      sse_decode_usize(deserializer),
+      sse_decode_i_32(deserializer),
+    );
+  }
+
+  @protected
+  Sha256HmacHasher
+  sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSha256HmacHasher(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return Sha256HmacHasherImpl.frbInternalSseDecode(
       sse_decode_usize(deserializer),
       sse_decode_i_32(deserializer),
     );
@@ -1752,12 +2520,35 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  Sha256HmacHasher
+  sse_decode_box_autoadd_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSha256HmacHasher(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSha256HmacHasher(
+      deserializer,
+    ));
+  }
+
+  @protected
   (Uint8List, U8Array32)
   sse_decode_box_autoadd_record_list_prim_u_8_strict_u_8_array_32(
     SseDeserializer deserializer,
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return (sse_decode_record_list_prim_u_8_strict_u_8_array_32(deserializer));
+  }
+
+  @protected
+  List<String> sse_decode_list_String(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var len_ = sse_decode_i_32(deserializer);
+    var ans_ = <String>[];
+    for (var idx_ = 0; idx_ < len_; ++idx_) {
+      ans_.add(sse_decode_String(deserializer));
+    }
+    return ans_;
   }
 
   @protected
@@ -1798,6 +2589,34 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       ans_.add(sse_decode_u_8_array_32(deserializer));
     }
     return ans_;
+  }
+
+  @protected
+  List<U8Array64> sse_decode_list_u_8_array_64(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var len_ = sse_decode_i_32(deserializer);
+    var ans_ = <U8Array64>[];
+    for (var idx_ = 0; idx_ < len_; ++idx_) {
+      ans_.add(sse_decode_u_8_array_64(deserializer));
+    }
+    return ans_;
+  }
+
+  @protected
+  Sha256HmacHasher?
+  sse_decode_opt_box_autoadd_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSha256HmacHasher(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_box_autoadd_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSha256HmacHasher(
+        deserializer,
+      ));
+    } else {
+      return null;
+    }
   }
 
   @protected
@@ -1910,13 +2729,13 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @protected
   void
-  sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHmacSha256State(
-    HmacSha256State self,
+  sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSha1Hasher(
+    Sha1Hasher self,
     SseSerializer serializer,
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_usize(
-      (self as HmacSha256StateImpl).frbInternalSseEncode(move: true),
+      (self as Sha1HasherImpl).frbInternalSseEncode(move: true),
       serializer,
     );
   }
@@ -1936,6 +2755,19 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @protected
   void
+  sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSha256HmacHasher(
+    Sha256HmacHasher self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_usize(
+      (self as Sha256HmacHasherImpl).frbInternalSseEncode(move: true),
+      serializer,
+    );
+  }
+
+  @protected
+  void
   sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSha512Hasher(
     Sha512Hasher self,
     SseSerializer serializer,
@@ -1949,13 +2781,13 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @protected
   void
-  sse_encode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHmacSha256State(
-    HmacSha256State self,
+  sse_encode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSha1Hasher(
+    Sha1Hasher self,
     SseSerializer serializer,
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_usize(
-      (self as HmacSha256StateImpl).frbInternalSseEncode(move: false),
+      (self as Sha1HasherImpl).frbInternalSseEncode(move: false),
       serializer,
     );
   }
@@ -1975,6 +2807,19 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @protected
   void
+  sse_encode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSha256HmacHasher(
+    Sha256HmacHasher self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_usize(
+      (self as Sha256HmacHasherImpl).frbInternalSseEncode(move: false),
+      serializer,
+    );
+  }
+
+  @protected
+  void
   sse_encode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSha512Hasher(
     Sha512Hasher self,
     SseSerializer serializer,
@@ -1988,13 +2833,13 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @protected
   void
-  sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHmacSha256State(
-    HmacSha256State self,
+  sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSha1Hasher(
+    Sha1Hasher self,
     SseSerializer serializer,
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_usize(
-      (self as HmacSha256StateImpl).frbInternalSseEncode(move: null),
+      (self as Sha1HasherImpl).frbInternalSseEncode(move: null),
       serializer,
     );
   }
@@ -2008,6 +2853,19 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_usize(
       (self as Sha256HasherImpl).frbInternalSseEncode(move: null),
+      serializer,
+    );
+  }
+
+  @protected
+  void
+  sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSha256HmacHasher(
+    Sha256HmacHasher self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_usize(
+      (self as Sha256HmacHasherImpl).frbInternalSseEncode(move: null),
       serializer,
     );
   }
@@ -2032,12 +2890,34 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void
+  sse_encode_box_autoadd_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSha256HmacHasher(
+    Sha256HmacHasher self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSha256HmacHasher(
+      self,
+      serializer,
+    );
+  }
+
+  @protected
   void sse_encode_box_autoadd_record_list_prim_u_8_strict_u_8_array_32(
     (Uint8List, U8Array32) self,
     SseSerializer serializer,
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_record_list_prim_u_8_strict_u_8_array_32(self, serializer);
+  }
+
+  @protected
+  void sse_encode_list_String(List<String> self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    for (final item in self) {
+      sse_encode_String(item, serializer);
+    }
   }
 
   @protected
@@ -2083,6 +2963,35 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_i_32(self.length, serializer);
     for (final item in self) {
       sse_encode_u_8_array_32(item, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_list_u_8_array_64(
+    List<U8Array64> self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    for (final item in self) {
+      sse_encode_u_8_array_64(item, serializer);
+    }
+  }
+
+  @protected
+  void
+  sse_encode_opt_box_autoadd_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSha256HmacHasher(
+    Sha256HmacHasher? self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_box_autoadd_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSha256HmacHasher(
+        self,
+        serializer,
+      );
     }
   }
 
@@ -2192,29 +3101,29 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 }
 
 @sealed
-class HmacSha256StateImpl extends RustOpaque implements HmacSha256State {
+class Sha1HasherImpl extends RustOpaque implements Sha1Hasher {
   // Not to be used by end users
-  HmacSha256StateImpl.frbInternalDcoDecode(List<dynamic> wire)
+  Sha1HasherImpl.frbInternalDcoDecode(List<dynamic> wire)
     : super.frbInternalDcoDecode(wire, _kStaticData);
 
   // Not to be used by end users
-  HmacSha256StateImpl.frbInternalSseDecode(BigInt ptr, int externalSizeOnNative)
+  Sha1HasherImpl.frbInternalSseDecode(BigInt ptr, int externalSizeOnNative)
     : super.frbInternalSseDecode(ptr, externalSizeOnNative, _kStaticData);
 
   static final _kStaticData = RustArcStaticData(
     rustArcIncrementStrongCount:
-        RustLib.instance.api.rust_arc_increment_strong_count_HmacSha256State,
+        RustLib.instance.api.rust_arc_increment_strong_count_Sha1Hasher,
     rustArcDecrementStrongCount:
-        RustLib.instance.api.rust_arc_decrement_strong_count_HmacSha256State,
+        RustLib.instance.api.rust_arc_decrement_strong_count_Sha1Hasher,
     rustArcDecrementStrongCountPtr:
-        RustLib.instance.api.rust_arc_decrement_strong_count_HmacSha256StatePtr,
+        RustLib.instance.api.rust_arc_decrement_strong_count_Sha1HasherPtr,
   );
 
-  U8Array32 finalize() =>
-      RustLib.instance.api.crateHmacSha256StateFinalize(that: this);
+  U8Array20 finalize() =>
+      RustLib.instance.api.crateSha1HasherFinalize(that: this);
 
   void update({required List<int> data}) =>
-      RustLib.instance.api.crateHmacSha256StateUpdate(that: this, data: data);
+      RustLib.instance.api.crateSha1HasherUpdate(that: this, data: data);
 }
 
 @sealed
@@ -2241,6 +3150,36 @@ class Sha256HasherImpl extends RustOpaque implements Sha256Hasher {
 
   void update({required List<int> data}) =>
       RustLib.instance.api.crateSha256HasherUpdate(that: this, data: data);
+}
+
+@sealed
+class Sha256HmacHasherImpl extends RustOpaque implements Sha256HmacHasher {
+  // Not to be used by end users
+  Sha256HmacHasherImpl.frbInternalDcoDecode(List<dynamic> wire)
+    : super.frbInternalDcoDecode(wire, _kStaticData);
+
+  // Not to be used by end users
+  Sha256HmacHasherImpl.frbInternalSseDecode(
+    BigInt ptr,
+    int externalSizeOnNative,
+  ) : super.frbInternalSseDecode(ptr, externalSizeOnNative, _kStaticData);
+
+  static final _kStaticData = RustArcStaticData(
+    rustArcIncrementStrongCount:
+        RustLib.instance.api.rust_arc_increment_strong_count_Sha256HmacHasher,
+    rustArcDecrementStrongCount:
+        RustLib.instance.api.rust_arc_decrement_strong_count_Sha256HmacHasher,
+    rustArcDecrementStrongCountPtr: RustLib
+        .instance
+        .api
+        .rust_arc_decrement_strong_count_Sha256HmacHasherPtr,
+  );
+
+  U8Array32 finalize() =>
+      RustLib.instance.api.crateSha256HmacHasherFinalize(that: this);
+
+  void update({required List<int> data}) =>
+      RustLib.instance.api.crateSha256HmacHasherUpdate(that: this, data: data);
 }
 
 @sealed

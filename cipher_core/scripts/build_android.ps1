@@ -33,13 +33,32 @@ if (-not (Test-Path $jniLibsDir)) { New-Item -ItemType Directory -Path $jniLibsD
 # Only ARM targets
 $targets = @("aarch64-linux-android", "armv7-linux-androideabi")
 
+# Hardware acceleration flags for maximum performance
+$env:RUSTFLAGS = "-C opt-level=3 -C lto=fat -C codegen-units=1 -C strip=symbols -C panic=abort"
+
 foreach ($target in $targets) {
     Write-Host "--------------------------------------------"
     Write-Host "Building Rust library for $target..."
     Write-Host "--------------------------------------------"
 
+    # Clear previous flags
+    Remove-Item Env:RUSTFLAGS -ErrorAction SilentlyContinue
+
+    # Target-specific hardware acceleration
+    if ($target -eq "aarch64-linux-android") {
+        $env:RUSTFLAGS = "-C opt-level=3 -C lto=fat -C codegen-units=1 -C strip=symbols -C panic=abort -C target-feature=+neon,+crc,+lse,+aes,+sha2"
+        Write-Host "Hardware acceleration: NEON SIMD, CRC, LSE atomics, AES, SHA2"
+    }
+    elseif ($target -eq "armv7-linux-androideabi") {
+        $env:RUSTFLAGS = "-C opt-level=3 -C lto=fat -C codegen-units=1 -C strip=symbols -C panic=abort -C target-feature=+neon,+vfpv4"
+        Write-Host "Hardware acceleration: NEON SIMD, VFPv4 FPU"
+    }
+
     & cargo ndk -t $target -o $jniLibsDir build --release
 }
+
+# Clear flags
+Remove-Item Env:RUSTFLAGS -ErrorAction SilentlyContinue
 
 Write-Host "============================================"
 Write-Host "Android build completed successfully!"

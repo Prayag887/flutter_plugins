@@ -7,105 +7,108 @@ import 'frb_generated.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-/// SHA-256 SYNC - Use for hot paths and small data
-/// ~1-5µs for typical inputs
-U8Array32 sha256Sync({required List<int> data}) =>
-    RustLib.instance.api.crateSha256Sync(data: data);
+// These functions are ignored because they are not marked as `pub`: `hmac_md5_internal`, `hmac_sha1_internal`, `hmac_sha224_internal`, `hmac_sha256_internal`, `hmac_sha384_internal`, `hmac_sha512_internal`, `md5_internal`, `sha1_internal`, `sha224_internal`, `sha256_internal`, `sha384_internal`, `sha512_224_internal`, `sha512_256_internal`, `sha512_internal`
 
-/// SHA-512 SYNC
-U8Array64 sha512Sync({required List<int> data}) =>
-    RustLib.instance.api.crateSha512Sync(data: data);
+U8Array32 sha256({required List<int> data}) =>
+    RustLib.instance.api.crateSha256(data: data);
 
-/// SHA-1 SYNC
-U8Array20 sha1Sync({required List<int> data}) =>
-    RustLib.instance.api.crateSha1Sync(data: data);
-
-/// SHA-384 SYNC
-U8Array48 sha384Sync({required List<int> data}) =>
-    RustLib.instance.api.crateSha384Sync(data: data);
-
-/// SHA-224 SYNC
-U8Array28 sha224Sync({required List<int> data}) =>
-    RustLib.instance.api.crateSha224Sync(data: data);
-
-/// MD5 SYNC - WARNING: Cryptographically broken
-U8Array16 md5Sync({required List<int> data}) =>
-    RustLib.instance.api.crateMd5Sync(data: data);
-
-/// SHA-512/256 SYNC
-U8Array32 sha512256Sync({required List<int> data}) =>
-    RustLib.instance.api.crateSha512256Sync(data: data);
-
-/// SHA-512/224 SYNC
-U8Array28 sha512224Sync({required List<int> data}) =>
-    RustLib.instance.api.crateSha512224Sync(data: data);
-
-/// SHA-256 ASYNC - Use for large data to avoid UI blocking
 Future<U8Array32> sha256Async({required List<int> data}) =>
     RustLib.instance.api.crateSha256Async(data: data);
+
+U8Array64 sha512({required List<int> data}) =>
+    RustLib.instance.api.crateSha512(data: data);
 
 Future<U8Array64> sha512Async({required List<int> data}) =>
     RustLib.instance.api.crateSha512Async(data: data);
 
+U8Array20 sha1({required List<int> data}) =>
+    RustLib.instance.api.crateSha1(data: data);
+
 Future<U8Array20> sha1Async({required List<int> data}) =>
     RustLib.instance.api.crateSha1Async(data: data);
+
+U8Array48 sha384({required List<int> data}) =>
+    RustLib.instance.api.crateSha384(data: data);
 
 Future<U8Array48> sha384Async({required List<int> data}) =>
     RustLib.instance.api.crateSha384Async(data: data);
 
+U8Array28 sha224({required List<int> data}) =>
+    RustLib.instance.api.crateSha224(data: data);
+
+Future<U8Array28> sha224Async({required List<int> data}) =>
+    RustLib.instance.api.crateSha224Async(data: data);
+
+U8Array16 md5({required List<int> data}) =>
+    RustLib.instance.api.crateMd5(data: data);
+
 Future<U8Array16> md5Async({required List<int> data}) =>
     RustLib.instance.api.crateMd5Async(data: data);
 
-/// HMAC-SHA256 SYNC - Hardware accelerated, ~2-8µs
-U8Array32 hmacSha256Sync({required List<int> key, required List<int> data}) =>
-    RustLib.instance.api.crateHmacSha256Sync(key: key, data: data);
+U8Array32 sha512256({required List<int> data}) =>
+    RustLib.instance.api.crateSha512256(data: data);
 
-/// HMAC-SHA512 SYNC
-U8Array64 hmacSha512Sync({required List<int> key, required List<int> data}) =>
-    RustLib.instance.api.crateHmacSha512Sync(key: key, data: data);
+Future<U8Array32> sha512256Async({required List<int> data}) =>
+    RustLib.instance.api.crateSha512256Async(data: data);
 
-/// HMAC-SHA1 SYNC
-U8Array20 hmacSha1Sync({required List<int> key, required List<int> data}) =>
-    RustLib.instance.api.crateHmacSha1Sync(key: key, data: data);
+U8Array28 sha512224({required List<int> data}) =>
+    RustLib.instance.api.crateSha512224(data: data);
 
-/// HMAC-SHA384 SYNC
-U8Array48 hmacSha384Sync({required List<int> key, required List<int> data}) =>
-    RustLib.instance.api.crateHmacSha384Sync(key: key, data: data);
+Future<U8Array28> sha512224Async({required List<int> data}) =>
+    RustLib.instance.api.crateSha512224Async(data: data);
 
-/// HMAC-SHA224 SYNC
-U8Array28 hmacSha224Sync({required List<int> key, required List<int> data}) =>
-    RustLib.instance.api.crateHmacSha224Sync(key: key, data: data);
-
-/// HMAC-MD5 SYNC - WARNING: Cryptographically broken
-U8Array16 hmacMd5Sync({required List<int> key, required List<int> data}) =>
-    RustLib.instance.api.crateHmacMd5Sync(key: key, data: data);
+U8Array32 hmacSha256({required List<int> key, required List<int> data}) =>
+    RustLib.instance.api.crateHmacSha256(key: key, data: data);
 
 Future<U8Array32> hmacSha256Async({
   required List<int> key,
   required List<int> data,
 }) => RustLib.instance.api.crateHmacSha256Async(key: key, data: data);
 
+U8Array64 hmacSha512({required List<int> key, required List<int> data}) =>
+    RustLib.instance.api.crateHmacSha512(key: key, data: data);
+
 Future<U8Array64> hmacSha512Async({
   required List<int> key,
   required List<int> data,
 }) => RustLib.instance.api.crateHmacSha512Async(key: key, data: data);
 
-/// AES-256-GCM SYNC Encryption - Returns raw ciphertext bytes
-/// ~50-150µs for <2KB data
-Uint8List? aes256EncryptSync({
+U8Array20 hmacSha1({required List<int> key, required List<int> data}) =>
+    RustLib.instance.api.crateHmacSha1(key: key, data: data);
+
+Future<U8Array20> hmacSha1Async({
+  required List<int> key,
+  required List<int> data,
+}) => RustLib.instance.api.crateHmacSha1Async(key: key, data: data);
+
+U8Array48 hmacSha384({required List<int> key, required List<int> data}) =>
+    RustLib.instance.api.crateHmacSha384(key: key, data: data);
+
+Future<U8Array48> hmacSha384Async({
+  required List<int> key,
+  required List<int> data,
+}) => RustLib.instance.api.crateHmacSha384Async(key: key, data: data);
+
+U8Array28 hmacSha224({required List<int> key, required List<int> data}) =>
+    RustLib.instance.api.crateHmacSha224(key: key, data: data);
+
+Future<U8Array28> hmacSha224Async({
+  required List<int> key,
+  required List<int> data,
+}) => RustLib.instance.api.crateHmacSha224Async(key: key, data: data);
+
+U8Array16 hmacMd5({required List<int> key, required List<int> data}) =>
+    RustLib.instance.api.crateHmacMd5(key: key, data: data);
+
+Future<U8Array16> hmacMd5Async({
+  required List<int> key,
+  required List<int> data,
+}) => RustLib.instance.api.crateHmacMd5Async(key: key, data: data);
+
+Uint8List? aes256Encrypt({
   required List<int> plaintext,
   required List<int> key,
-}) =>
-    RustLib.instance.api.crateAes256EncryptSync(plaintext: plaintext, key: key);
-
-/// AES-256-GCM SYNC Decryption - Takes raw ciphertext bytes
-Uint8List? aes256DecryptSync({
-  required List<int> ciphertext,
-  required List<int> key,
-}) => RustLib.instance.api.crateAes256DecryptSync(
-  ciphertext: ciphertext,
-  key: key,
-);
+}) => RustLib.instance.api.crateAes256Encrypt(plaintext: plaintext, key: key);
 
 Future<Uint8List?> aes256EncryptAsync({
   required List<int> plaintext,
@@ -115,6 +118,11 @@ Future<Uint8List?> aes256EncryptAsync({
   key: key,
 );
 
+Uint8List? aes256Decrypt({
+  required List<int> ciphertext,
+  required List<int> key,
+}) => RustLib.instance.api.crateAes256Decrypt(ciphertext: ciphertext, key: key);
+
 Future<Uint8List?> aes256DecryptAsync({
   required List<int> ciphertext,
   required List<int> key,
@@ -123,66 +131,112 @@ Future<Uint8List?> aes256DecryptAsync({
   key: key,
 );
 
-/// Hash multiple inputs in one FFI call - HUGE performance win
-/// Example: 1000 hashes in ~5ms instead of ~50ms
-List<U8Array32> sha256BatchSync({required List<Uint8List> inputs}) =>
-    RustLib.instance.api.crateSha256BatchSync(inputs: inputs);
+List<U8Array32> sha256Batch({required List<Uint8List> inputs}) =>
+    RustLib.instance.api.crateSha256Batch(inputs: inputs);
 
-/// HMAC batch processing
-List<U8Array32> hmacSha256BatchSync({
+Future<List<U8Array32>> sha256BatchAsync({required List<Uint8List> inputs}) =>
+    RustLib.instance.api.crateSha256BatchAsync(inputs: inputs);
+
+List<U8Array64> sha512Batch({required List<Uint8List> inputs}) =>
+    RustLib.instance.api.crateSha512Batch(inputs: inputs);
+
+Future<List<U8Array64>> sha512BatchAsync({required List<Uint8List> inputs}) =>
+    RustLib.instance.api.crateSha512BatchAsync(inputs: inputs);
+
+List<U8Array32> hmacSha256Batch({
   required List<int> key,
   required List<Uint8List> messages,
-}) =>
-    RustLib.instance.api.crateHmacSha256BatchSync(key: key, messages: messages);
+}) => RustLib.instance.api.crateHmacSha256Batch(key: key, messages: messages);
 
-/// Hash then encrypt in one operation - saves FFI roundtrip
-Uint8List? hashThenEncryptSync({
+Future<List<U8Array32>> hmacSha256BatchAsync({
+  required List<int> key,
+  required List<Uint8List> messages,
+}) => RustLib.instance.api.crateHmacSha256BatchAsync(
+  key: key,
+  messages: messages,
+);
+
+List<U8Array64> hmacSha512Batch({
+  required List<int> key,
+  required List<Uint8List> messages,
+}) => RustLib.instance.api.crateHmacSha512Batch(key: key, messages: messages);
+
+Future<List<U8Array64>> hmacSha512BatchAsync({
+  required List<int> key,
+  required List<Uint8List> messages,
+}) => RustLib.instance.api.crateHmacSha512BatchAsync(
+  key: key,
+  messages: messages,
+);
+
+Uint8List? hashThenEncrypt({required List<int> data, required List<int> key}) =>
+    RustLib.instance.api.crateHashThenEncrypt(data: data, key: key);
+
+Future<Uint8List?> hashThenEncryptAsync({
   required List<int> data,
   required List<int> key,
-}) => RustLib.instance.api.crateHashThenEncryptSync(data: data, key: key);
+}) => RustLib.instance.api.crateHashThenEncryptAsync(data: data, key: key);
 
-/// Encrypt then HMAC (Encrypt-then-MAC pattern)
-(Uint8List, U8Array32)? encryptThenMacSync({
+(Uint8List, U8Array32)? encryptThenHmac({
   required List<int> plaintext,
   required List<int> encKey,
   required List<int> macKey,
-}) => RustLib.instance.api.crateEncryptThenMacSync(
+}) => RustLib.instance.api.crateEncryptThenHmac(
   plaintext: plaintext,
   encKey: encKey,
   macKey: macKey,
 );
 
-/// Verify MAC then decrypt
-Uint8List? verifyThenDecryptSync({
+Future<(Uint8List, U8Array32)?> encryptThenHmacAsync({
+  required List<int> plaintext,
+  required List<int> encKey,
+  required List<int> macKey,
+}) => RustLib.instance.api.crateEncryptThenHmacAsync(
+  plaintext: plaintext,
+  encKey: encKey,
+  macKey: macKey,
+);
+
+Uint8List? verifyHmacThenDecrypt({
   required List<int> ciphertext,
   required List<int> mac,
   required List<int> encKey,
   required List<int> macKey,
-}) => RustLib.instance.api.crateVerifyThenDecryptSync(
+}) => RustLib.instance.api.crateVerifyHmacThenDecrypt(
   ciphertext: ciphertext,
   mac: mac,
   encKey: encKey,
   macKey: macKey,
 );
 
-/// Convert bytes to hex string - do this in Rust to avoid Dart overhead
-String toHexSync({required List<int> bytes}) =>
-    RustLib.instance.api.crateToHexSync(bytes: bytes);
+Future<Uint8List?> verifyHmacThenDecryptAsync({
+  required List<int> ciphertext,
+  required List<int> mac,
+  required List<int> encKey,
+  required List<int> macKey,
+}) => RustLib.instance.api.crateVerifyHmacThenDecryptAsync(
+  ciphertext: ciphertext,
+  mac: mac,
+  encKey: encKey,
+  macKey: macKey,
+);
 
-/// Convert hex string to bytes
-Uint8List? fromHexSync({required String hexString}) =>
-    RustLib.instance.api.crateFromHexSync(hexString: hexString);
+String toHex({required List<int> bytes}) =>
+    RustLib.instance.api.crateToHex(bytes: bytes);
 
-/// Get hash output size in bytes
-BigInt hashSizeSync({required String algorithm}) =>
-    RustLib.instance.api.crateHashSizeSync(algorithm: algorithm);
+Uint8List? fromHex({required String hexString}) =>
+    RustLib.instance.api.crateFromHex(hexString: hexString);
 
-// Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<HmacSha256State>>
-abstract class HmacSha256State implements RustOpaqueInterface {
-  U8Array32 finalize();
+BigInt hashSize({required String algorithm}) =>
+    RustLib.instance.api.crateHashSize(algorithm: algorithm);
 
-  factory HmacSha256State({required List<int> key}) =>
-      RustLib.instance.api.crateHmacSha256StateNew(key: key);
+List<String> getAllAlgorithms() => RustLib.instance.api.crateGetAllAlgorithms();
+
+// Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<Sha1Hasher>>
+abstract class Sha1Hasher implements RustOpaqueInterface {
+  U8Array20 finalize();
+
+  factory Sha1Hasher() => RustLib.instance.api.crateSha1HasherNew();
 
   void update({required List<int> data});
 }
@@ -192,6 +246,17 @@ abstract class Sha256Hasher implements RustOpaqueInterface {
   U8Array32 finalize();
 
   factory Sha256Hasher() => RustLib.instance.api.crateSha256HasherNew();
+
+  void update({required List<int> data});
+}
+
+// Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<Sha256HmacHasher>>
+abstract class Sha256HmacHasher implements RustOpaqueInterface {
+  U8Array32 finalize();
+
+  factory Sha256HmacHasher({required List<int> key}) =>
+      RustLib.instance.api.crateSha256HmacHasherNew(key: key) ??
+          (throw StateError('Failed to create Sha256HmacHasher'));
 
   void update({required List<int> data});
 }

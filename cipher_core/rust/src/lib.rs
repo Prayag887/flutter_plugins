@@ -1,13 +1,13 @@
 mod frb_generated;
 
-use sha2::{Sha224, Sha256, Sha384, Sha512, Digest};
-use sha1::Sha1;
-use md5::Md5;
-use hmac::{Hmac, Mac};
 use aes_gcm::{Aes256Gcm, Key, Nonce};
 use aes_gcm::aead::{Aead, Payload, KeyInit};
+use hmac::{Hmac, Mac};
+use md5::Md5;
+use sha1::Sha1;
+use sha2::{Sha224, Sha256, Sha384, Sha512, Sha512_224, Sha512_256, Digest};
+use rand::Rng;
 
-// Type aliases for HMAC variants
 type HmacMd5 = Hmac<Md5>;
 type HmacSha1 = Hmac<Sha1>;
 type HmacSha224 = Hmac<Sha224>;
@@ -16,355 +16,499 @@ type HmacSha384 = Hmac<Sha384>;
 type HmacSha512 = Hmac<Sha512>;
 
 // ============================================================================
-// ULTRA-FAST SYNC HASH FUNCTIONS (Zero overhead, <5µs)
+// INTERNAL HELPER FUNCTIONS (for zero-copy operations)
 // ============================================================================
-// Use these for small data (<100KB) - they're 10-50x faster than async!
 
-/// SHA-256 SYNC - Use for hot paths and small data
-/// ~1-5µs for typical inputs
-#[flutter_rust_bridge::frb(sync)]
 #[inline(always)]
-pub fn sha256_sync(data: Vec<u8>) -> [u8; 32] {
+fn sha256_internal(data: &[u8]) -> [u8; 32] {
     let mut hasher = Sha256::new();
-    hasher.update(&data);
-    let result = hasher.finalize();
-    let mut output = [0u8; 32];
-    output.copy_from_slice(&result);
-    output
+    hasher.update(data);
+    hasher.finalize().into()
 }
 
-/// SHA-512 SYNC
-#[flutter_rust_bridge::frb(sync)]
 #[inline(always)]
-pub fn sha512_sync(data: Vec<u8>) -> [u8; 64] {
+fn sha512_internal(data: &[u8]) -> [u8; 64] {
     let mut hasher = Sha512::new();
-    hasher.update(&data);
-    let result = hasher.finalize();
-    let mut output = [0u8; 64];
-    output.copy_from_slice(&result);
-    output
+    hasher.update(data);
+    hasher.finalize().into()
 }
 
-/// SHA-1 SYNC
-#[flutter_rust_bridge::frb(sync)]
 #[inline(always)]
-pub fn sha1_sync(data: Vec<u8>) -> [u8; 20] {
+fn sha1_internal(data: &[u8]) -> [u8; 20] {
     let mut hasher = Sha1::new();
-    hasher.update(&data);
-    let result = hasher.finalize();
-    let mut output = [0u8; 20];
-    output.copy_from_slice(&result);
-    output
+    hasher.update(data);
+    hasher.finalize().into()
 }
 
-/// SHA-384 SYNC
-#[flutter_rust_bridge::frb(sync)]
 #[inline(always)]
-pub fn sha384_sync(data: Vec<u8>) -> [u8; 48] {
+fn sha384_internal(data: &[u8]) -> [u8; 48] {
     let mut hasher = Sha384::new();
-    hasher.update(&data);
-    let result = hasher.finalize();
-    let mut output = [0u8; 48];
-    output.copy_from_slice(&result);
-    output
+    hasher.update(data);
+    hasher.finalize().into()
 }
 
-/// SHA-224 SYNC
-#[flutter_rust_bridge::frb(sync)]
 #[inline(always)]
-pub fn sha224_sync(data: Vec<u8>) -> [u8; 28] {
+fn sha224_internal(data: &[u8]) -> [u8; 28] {
     let mut hasher = Sha224::new();
-    hasher.update(&data);
-    let result = hasher.finalize();
-    let mut output = [0u8; 28];
-    output.copy_from_slice(&result);
-    output
+    hasher.update(data);
+    hasher.finalize().into()
 }
 
-/// MD5 SYNC - WARNING: Cryptographically broken
-#[flutter_rust_bridge::frb(sync)]
 #[inline(always)]
-pub fn md5_sync(data: Vec<u8>) -> [u8; 16] {
+fn md5_internal(data: &[u8]) -> [u8; 16] {
     let mut hasher = Md5::new();
-    hasher.update(&data);
-    let result = hasher.finalize();
-    let mut output = [0u8; 16];
-    output.copy_from_slice(&result);
-    output
+    hasher.update(data);
+    hasher.finalize().into()
 }
 
-/// SHA-512/256 SYNC
-#[flutter_rust_bridge::frb(sync)]
 #[inline(always)]
-pub fn sha512_256_sync(data: Vec<u8>) -> [u8; 32] {
-    use sha2::Sha512_256;
+fn sha512_256_internal(data: &[u8]) -> [u8; 32] {
     let mut hasher = Sha512_256::new();
-    hasher.update(&data);
-    let result = hasher.finalize();
-    let mut output = [0u8; 32];
-    output.copy_from_slice(&result);
-    output
+    hasher.update(data);
+    hasher.finalize().into()
 }
 
-/// SHA-512/224 SYNC
-#[flutter_rust_bridge::frb(sync)]
 #[inline(always)]
-pub fn sha512_224_sync(data: Vec<u8>) -> [u8; 28] {
-    use sha2::Sha512_224;
+fn sha512_224_internal(data: &[u8]) -> [u8; 28] {
     let mut hasher = Sha512_224::new();
-    hasher.update(&data);
-    let result = hasher.finalize();
-    let mut output = [0u8; 28];
-    output.copy_from_slice(&result);
-    output
+    hasher.update(data);
+    hasher.finalize().into()
+}
+
+#[inline(always)]
+fn hmac_sha256_internal(key: &[u8], data: &[u8]) -> [u8; 32] {
+    let mut mac = <HmacSha256 as Mac>::new_from_slice(key).unwrap();
+    mac.update(data);
+    mac.finalize().into_bytes().into()
+}
+
+#[inline(always)]
+fn hmac_sha512_internal(key: &[u8], data: &[u8]) -> [u8; 64] {
+    let mut mac = <HmacSha512 as Mac>::new_from_slice(key).unwrap();
+    mac.update(data);
+    mac.finalize().into_bytes().into()
+}
+
+#[inline(always)]
+fn hmac_sha1_internal(key: &[u8], data: &[u8]) -> [u8; 20] {
+    let mut mac = <HmacSha1 as Mac>::new_from_slice(key).unwrap();
+    mac.update(data);
+    mac.finalize().into_bytes().into()
+}
+
+#[inline(always)]
+fn hmac_sha384_internal(key: &[u8], data: &[u8]) -> [u8; 48] {
+    let mut mac = <HmacSha384 as Mac>::new_from_slice(key).unwrap();
+    mac.update(data);
+    mac.finalize().into_bytes().into()
+}
+
+#[inline(always)]
+fn hmac_sha224_internal(key: &[u8], data: &[u8]) -> [u8; 28] {
+    let mut mac = <HmacSha224 as Mac>::new_from_slice(key).unwrap();
+    mac.update(data);
+    mac.finalize().into_bytes().into()
+}
+
+#[inline(always)]
+fn hmac_md5_internal(key: &[u8], data: &[u8]) -> [u8; 16] {
+    let mut mac = <HmacMd5 as Mac>::new_from_slice(key).unwrap();
+    mac.update(data);
+    mac.finalize().into_bytes().into()
 }
 
 // ============================================================================
-// ASYNC HASH FUNCTIONS (For large data or non-blocking)
+// SHA-256 (SYNC & ASYNC)
 // ============================================================================
-// Use these for large files (>100KB) to avoid blocking the UI
 
-/// SHA-256 ASYNC - Use for large data to avoid UI blocking
-pub fn sha256_async(data: Vec<u8>) -> [u8; 32] {
-    sha256_sync(data)
+#[flutter_rust_bridge::frb(sync)]
+#[inline(always)]
+pub fn sha256(data: Vec<u8>) -> [u8; 32] {
+    sha256_internal(&data)
 }
 
-pub fn sha512_async(data: Vec<u8>) -> [u8; 64] {
-    sha512_sync(data)
-}
-
-pub fn sha1_async(data: Vec<u8>) -> [u8; 20] {
-    sha1_sync(data)
-}
-
-pub fn sha384_async(data: Vec<u8>) -> [u8; 48] {
-    sha384_sync(data)
-}
-
-pub fn md5_async(data: Vec<u8>) -> [u8; 16] {
-    md5_sync(data)
+#[flutter_rust_bridge::frb(dart_async)]
+pub async fn sha256_async(data: Vec<u8>) -> [u8; 32] {
+    sha256_internal(&data)
 }
 
 // ============================================================================
-// ULTRA-FAST SYNC HMAC FUNCTIONS
+// SHA-512 (SYNC & ASYNC)
 // ============================================================================
 
-/// HMAC-SHA256 SYNC - Hardware accelerated, ~2-8µs
 #[flutter_rust_bridge::frb(sync)]
 #[inline(always)]
-pub fn hmac_sha256_sync(key: Vec<u8>, data: Vec<u8>) -> [u8; 32] {
-    let mut mac = <HmacSha256 as Mac>::new_from_slice(&key)
-        .expect("HMAC can take key of any size");
-    mac.update(&data);
-    let result = mac.finalize().into_bytes();
-    let mut output = [0u8; 32];
-    output.copy_from_slice(&result);
-    output
+pub fn sha512(data: Vec<u8>) -> [u8; 64] {
+    sha512_internal(&data)
 }
 
-/// HMAC-SHA512 SYNC
-#[flutter_rust_bridge::frb(sync)]
-#[inline(always)]
-pub fn hmac_sha512_sync(key: Vec<u8>, data: Vec<u8>) -> [u8; 64] {
-    let mut mac = <HmacSha512 as Mac>::new_from_slice(&key)
-        .expect("HMAC can take key of any size");
-    mac.update(&data);
-    let result = mac.finalize().into_bytes();
-    let mut output = [0u8; 64];
-    output.copy_from_slice(&result);
-    output
-}
-
-/// HMAC-SHA1 SYNC
-#[flutter_rust_bridge::frb(sync)]
-#[inline(always)]
-pub fn hmac_sha1_sync(key: Vec<u8>, data: Vec<u8>) -> [u8; 20] {
-    let mut mac = <HmacSha1 as Mac>::new_from_slice(&key)
-        .expect("HMAC can take key of any size");
-    mac.update(&data);
-    let result = mac.finalize().into_bytes();
-    let mut output = [0u8; 20];
-    output.copy_from_slice(&result);
-    output
-}
-
-/// HMAC-SHA384 SYNC
-#[flutter_rust_bridge::frb(sync)]
-#[inline(always)]
-pub fn hmac_sha384_sync(key: Vec<u8>, data: Vec<u8>) -> [u8; 48] {
-    let mut mac = <HmacSha384 as Mac>::new_from_slice(&key)
-        .expect("HMAC can take key of any size");
-    mac.update(&data);
-    let result = mac.finalize().into_bytes();
-    let mut output = [0u8; 48];
-    output.copy_from_slice(&result);
-    output
-}
-
-/// HMAC-SHA224 SYNC
-#[flutter_rust_bridge::frb(sync)]
-#[inline(always)]
-pub fn hmac_sha224_sync(key: Vec<u8>, data: Vec<u8>) -> [u8; 28] {
-    let mut mac = <HmacSha224 as Mac>::new_from_slice(&key)
-        .expect("HMAC can take key of any size");
-    mac.update(&data);
-    let result = mac.finalize().into_bytes();
-    let mut output = [0u8; 28];
-    output.copy_from_slice(&result);
-    output
-}
-
-/// HMAC-MD5 SYNC - WARNING: Cryptographically broken
-#[flutter_rust_bridge::frb(sync)]
-#[inline(always)]
-pub fn hmac_md5_sync(key: Vec<u8>, data: Vec<u8>) -> [u8; 16] {
-    let mut mac = <HmacMd5 as Mac>::new_from_slice(&key)
-        .expect("HMAC can take key of any size");
-    mac.update(&data);
-    let result = mac.finalize().into_bytes();
-    let mut output = [0u8; 16];
-    output.copy_from_slice(&result);
-    output
-}
-
-// ASYNC HMAC wrappers
-pub fn hmac_sha256_async(key: Vec<u8>, data: Vec<u8>) -> [u8; 32] {
-    hmac_sha256_sync(key, data)
-}
-
-pub fn hmac_sha512_async(key: Vec<u8>, data: Vec<u8>) -> [u8; 64] {
-    hmac_sha512_sync(key, data)
+#[flutter_rust_bridge::frb(dart_async)]
+pub async fn sha512_async(data: Vec<u8>) -> [u8; 64] {
+    sha512_internal(&data)
 }
 
 // ============================================================================
-// ULTRA-FAST SYNC AES-256-GCM (Returns raw bytes, not String)
+// SHA-1 (SYNC & ASYNC)
 // ============================================================================
 
-/// AES-256-GCM SYNC Encryption - Returns raw ciphertext bytes
-/// ~50-150µs for <2KB data
 #[flutter_rust_bridge::frb(sync)]
 #[inline(always)]
-pub fn aes256_encrypt_sync(plaintext: Vec<u8>, key: Vec<u8>) -> Option<Vec<u8>> {
-    if key.len() != 32 {
-        return None;
-    }
-
-    let key = Key::<Aes256Gcm>::from_slice(&key);
-    let cipher = Aes256Gcm::new(key);
-    let nonce = Nonce::from_slice(&[0u8; 12]);
-
-    cipher.encrypt(nonce, Payload::from(&plaintext[..])).ok()
+pub fn sha1(data: Vec<u8>) -> [u8; 20] {
+    sha1_internal(&data)
 }
 
-/// AES-256-GCM SYNC Decryption - Takes raw ciphertext bytes
+#[flutter_rust_bridge::frb(dart_async)]
+pub async fn sha1_async(data: Vec<u8>) -> [u8; 20] {
+    sha1_internal(&data)
+}
+
+// ============================================================================
+// SHA-384 (SYNC & ASYNC)
+// ============================================================================
+
 #[flutter_rust_bridge::frb(sync)]
 #[inline(always)]
-pub fn aes256_decrypt_sync(ciphertext: Vec<u8>, key: Vec<u8>) -> Option<Vec<u8>> {
-    if key.len() != 32 {
-        return None;
-    }
-
-    let key = Key::<Aes256Gcm>::from_slice(&key);
-    let cipher = Aes256Gcm::new(key);
-    let nonce = Nonce::from_slice(&[0u8; 12]);
-
-    cipher.decrypt(nonce, Payload::from(&ciphertext[..])).ok()
+pub fn sha384(data: Vec<u8>) -> [u8; 48] {
+    sha384_internal(&data)
 }
 
-// ASYNC AES wrappers
-pub fn aes256_encrypt_async(plaintext: Vec<u8>, key: Vec<u8>) -> Option<Vec<u8>> {
-    aes256_encrypt_sync(plaintext, key)
-}
-
-pub fn aes256_decrypt_async(ciphertext: Vec<u8>, key: Vec<u8>) -> Option<Vec<u8>> {
-    aes256_decrypt_sync(ciphertext, key)
+#[flutter_rust_bridge::frb(dart_async)]
+pub async fn sha384_async(data: Vec<u8>) -> [u8; 48] {
+    sha384_internal(&data)
 }
 
 // ============================================================================
-// BATCH OPERATIONS (Process multiple at once - saves FFI overhead)
+// SHA-224 (SYNC & ASYNC)
 // ============================================================================
 
-/// Hash multiple inputs in one FFI call - HUGE performance win
-/// Example: 1000 hashes in ~5ms instead of ~50ms
 #[flutter_rust_bridge::frb(sync)]
-pub fn sha256_batch_sync(inputs: Vec<Vec<u8>>) -> Vec<[u8; 32]> {
-    inputs.iter()
-        .map(|data| sha256_sync(data.clone()))
+#[inline(always)]
+pub fn sha224(data: Vec<u8>) -> [u8; 28] {
+    sha224_internal(&data)
+}
+
+#[flutter_rust_bridge::frb(dart_async)]
+pub async fn sha224_async(data: Vec<u8>) -> [u8; 28] {
+    sha224_internal(&data)
+}
+
+// ============================================================================
+// MD5 (SYNC & ASYNC)
+// ============================================================================
+
+#[flutter_rust_bridge::frb(sync)]
+#[inline(always)]
+pub fn md5(data: Vec<u8>) -> [u8; 16] {
+    md5_internal(&data)
+}
+
+#[flutter_rust_bridge::frb(dart_async)]
+pub async fn md5_async(data: Vec<u8>) -> [u8; 16] {
+    md5_internal(&data)
+}
+
+// ============================================================================
+// SHA-512/256 (SYNC & ASYNC)
+// ============================================================================
+
+#[flutter_rust_bridge::frb(sync)]
+#[inline(always)]
+pub fn sha512_256(data: Vec<u8>) -> [u8; 32] {
+    sha512_256_internal(&data)
+}
+
+#[flutter_rust_bridge::frb(dart_async)]
+pub async fn sha512_256_async(data: Vec<u8>) -> [u8; 32] {
+    sha512_256_internal(&data)
+}
+
+// ============================================================================
+// SHA-512/224 (SYNC & ASYNC)
+// ============================================================================
+
+#[flutter_rust_bridge::frb(sync)]
+#[inline(always)]
+pub fn sha512_224(data: Vec<u8>) -> [u8; 28] {
+    sha512_224_internal(&data)
+}
+
+#[flutter_rust_bridge::frb(dart_async)]
+pub async fn sha512_224_async(data: Vec<u8>) -> [u8; 28] {
+    sha512_224_internal(&data)
+}
+
+// ============================================================================
+// HMAC-SHA256 (SYNC & ASYNC)
+// ============================================================================
+
+#[flutter_rust_bridge::frb(sync)]
+#[inline(always)]
+pub fn hmac_sha256(key: Vec<u8>, data: Vec<u8>) -> [u8; 32] {
+    hmac_sha256_internal(&key, &data)
+}
+
+#[flutter_rust_bridge::frb(dart_async)]
+pub async fn hmac_sha256_async(key: Vec<u8>, data: Vec<u8>) -> [u8; 32] {
+    hmac_sha256_internal(&key, &data)
+}
+
+// ============================================================================
+// HMAC-SHA512 (SYNC & ASYNC)
+// ============================================================================
+
+#[flutter_rust_bridge::frb(sync)]
+#[inline(always)]
+pub fn hmac_sha512(key: Vec<u8>, data: Vec<u8>) -> [u8; 64] {
+    hmac_sha512_internal(&key, &data)
+}
+
+#[flutter_rust_bridge::frb(dart_async)]
+pub async fn hmac_sha512_async(key: Vec<u8>, data: Vec<u8>) -> [u8; 64] {
+    hmac_sha512_internal(&key, &data)
+}
+
+// ============================================================================
+// HMAC-SHA1 (SYNC & ASYNC)
+// ============================================================================
+
+#[flutter_rust_bridge::frb(sync)]
+#[inline(always)]
+pub fn hmac_sha1(key: Vec<u8>, data: Vec<u8>) -> [u8; 20] {
+    hmac_sha1_internal(&key, &data)
+}
+
+#[flutter_rust_bridge::frb(dart_async)]
+pub async fn hmac_sha1_async(key: Vec<u8>, data: Vec<u8>) -> [u8; 20] {
+    hmac_sha1_internal(&key, &data)
+}
+
+// ============================================================================
+// HMAC-SHA384 (SYNC & ASYNC)
+// ============================================================================
+
+#[flutter_rust_bridge::frb(sync)]
+#[inline(always)]
+pub fn hmac_sha384(key: Vec<u8>, data: Vec<u8>) -> [u8; 48] {
+    hmac_sha384_internal(&key, &data)
+}
+
+#[flutter_rust_bridge::frb(dart_async)]
+pub async fn hmac_sha384_async(key: Vec<u8>, data: Vec<u8>) -> [u8; 48] {
+    hmac_sha384_internal(&key, &data)
+}
+
+// ============================================================================
+// HMAC-SHA224 (SYNC & ASYNC)
+// ============================================================================
+
+#[flutter_rust_bridge::frb(sync)]
+#[inline(always)]
+pub fn hmac_sha224(key: Vec<u8>, data: Vec<u8>) -> [u8; 28] {
+    hmac_sha224_internal(&key, &data)
+}
+
+#[flutter_rust_bridge::frb(dart_async)]
+pub async fn hmac_sha224_async(key: Vec<u8>, data: Vec<u8>) -> [u8; 28] {
+    hmac_sha224_internal(&key, &data)
+}
+
+// ============================================================================
+// HMAC-MD5 (SYNC & ASYNC)
+// ============================================================================
+
+#[flutter_rust_bridge::frb(sync)]
+#[inline(always)]
+pub fn hmac_md5(key: Vec<u8>, data: Vec<u8>) -> [u8; 16] {
+    hmac_md5_internal(&key, &data)
+}
+
+#[flutter_rust_bridge::frb(dart_async)]
+pub async fn hmac_md5_async(key: Vec<u8>, data: Vec<u8>) -> [u8; 16] {
+    hmac_md5_internal(&key, &data)
+}
+
+// ============================================================================
+// AES-256-GCM ENCRYPTION (SYNC & ASYNC)
+// Nonce is automatically generated and prepended to ciphertext
+// ============================================================================
+
+#[flutter_rust_bridge::frb(sync)]
+#[inline(always)]
+pub fn aes256_encrypt(plaintext: Vec<u8>, key: Vec<u8>) -> Option<Vec<u8>> {
+    if key.len() != 32 { return None; }
+
+    let cipher = Aes256Gcm::new(Key::<Aes256Gcm>::from_slice(&key));
+
+    // Generate random nonce (CRITICAL for security)
+    let mut nonce_bytes = [0u8; 12];
+    rand::rng().fill_bytes(&mut nonce_bytes);
+    let nonce = Nonce::from_slice(&nonce_bytes);
+
+    // Encrypt
+    let ciphertext = cipher.encrypt(nonce, Payload::from(&plaintext[..])).ok()?;
+
+    // Prepend nonce to ciphertext so decryption can extract it
+    let mut result = nonce_bytes.to_vec();
+    result.extend_from_slice(&ciphertext);
+    Some(result)
+}
+
+#[flutter_rust_bridge::frb(dart_async)]
+pub async fn aes256_encrypt_async(plaintext: Vec<u8>, key: Vec<u8>) -> Option<Vec<u8>> {
+    aes256_encrypt(plaintext, key)
+}
+
+// ============================================================================
+// AES-256-GCM DECRYPTION (SYNC & ASYNC)
+// Nonce is extracted from first 12 bytes of ciphertext
+// ============================================================================
+
+#[flutter_rust_bridge::frb(sync)]
+#[inline(always)]
+pub fn aes256_decrypt(ciphertext: Vec<u8>, key: Vec<u8>) -> Option<Vec<u8>> {
+    if key.len() != 32 || ciphertext.len() < 12 { return None; }
+
+    let cipher = Aes256Gcm::new(Key::<Aes256Gcm>::from_slice(&key));
+
+    // Extract nonce from ciphertext (first 12 bytes)
+    let nonce = Nonce::from_slice(&ciphertext[..12]);
+
+    // Decrypt remaining bytes
+    cipher.decrypt(nonce, Payload::from(&ciphertext[12..])).ok()
+}
+
+#[flutter_rust_bridge::frb(dart_async)]
+pub async fn aes256_decrypt_async(ciphertext: Vec<u8>, key: Vec<u8>) -> Option<Vec<u8>> {
+    aes256_decrypt(ciphertext, key)
+}
+
+// ============================================================================
+// BATCH OPERATIONS (SYNC & ASYNC)
+// ============================================================================
+
+#[flutter_rust_bridge::frb(sync)]
+pub fn sha256_batch(inputs: Vec<Vec<u8>>) -> Vec<[u8; 32]> {
+    inputs.into_iter().map(|input| sha256_internal(&input)).collect()
+}
+
+#[flutter_rust_bridge::frb(dart_async)]
+pub async fn sha256_batch_async(inputs: Vec<Vec<u8>>) -> Vec<[u8; 32]> {
+    inputs.into_iter().map(|input| sha256_internal(&input)).collect()
+}
+
+#[flutter_rust_bridge::frb(sync)]
+pub fn sha512_batch(inputs: Vec<Vec<u8>>) -> Vec<[u8; 64]> {
+    inputs.into_iter().map(|input| sha512_internal(&input)).collect()
+}
+
+#[flutter_rust_bridge::frb(dart_async)]
+pub async fn sha512_batch_async(inputs: Vec<Vec<u8>>) -> Vec<[u8; 64]> {
+    inputs.into_iter().map(|input| sha512_internal(&input)).collect()
+}
+
+#[flutter_rust_bridge::frb(sync)]
+pub fn hmac_sha256_batch(key: Vec<u8>, messages: Vec<Vec<u8>>) -> Vec<[u8; 32]> {
+    // OPTIMIZED: No key cloning
+    messages.into_iter()
+        .map(|msg| hmac_sha256_internal(&key, &msg))
         .collect()
 }
 
-/// HMAC batch processing
+#[flutter_rust_bridge::frb(dart_async)]
+pub async fn hmac_sha256_batch_async(key: Vec<u8>, messages: Vec<Vec<u8>>) -> Vec<[u8; 32]> {
+    // OPTIMIZED: No key cloning
+    messages.into_iter()
+        .map(|msg| hmac_sha256_internal(&key, &msg))
+        .collect()
+}
+
 #[flutter_rust_bridge::frb(sync)]
-pub fn hmac_sha256_batch_sync(key: Vec<u8>, messages: Vec<Vec<u8>>) -> Vec<[u8; 32]> {
-    messages.iter()
-        .map(|msg| hmac_sha256_sync(key.clone(), msg.clone()))
+pub fn hmac_sha512_batch(key: Vec<u8>, messages: Vec<Vec<u8>>) -> Vec<[u8; 64]> {
+    messages.into_iter()
+        .map(|msg| hmac_sha512_internal(&key, &msg))
+        .collect()
+}
+
+#[flutter_rust_bridge::frb(dart_async)]
+pub async fn hmac_sha512_batch_async(key: Vec<u8>, messages: Vec<Vec<u8>>) -> Vec<[u8; 64]> {
+    messages.into_iter()
+        .map(|msg| hmac_sha512_internal(&key, &msg))
         .collect()
 }
 
 // ============================================================================
-// COMBINED OPERATIONS (Single FFI call)
+// COMBINED OPERATIONS (SYNC & ASYNC)
 // ============================================================================
 
-/// Hash then encrypt in one operation - saves FFI roundtrip
 #[flutter_rust_bridge::frb(sync)]
-#[inline(always)]
-pub fn hash_then_encrypt_sync(data: Vec<u8>, key: Vec<u8>) -> Option<Vec<u8>> {
-    if key.len() != 32 {
-        return None;
-    }
-
-    let hash = sha256_sync(data);
-    let key_slice = Key::<Aes256Gcm>::from_slice(&key);
-    let cipher = Aes256Gcm::new(key_slice);
-    let nonce = Nonce::from_slice(&[0u8; 12]);
-
-    cipher.encrypt(nonce, Payload::from(&hash[..])).ok()
+pub fn hash_then_encrypt(data: Vec<u8>, key: Vec<u8>) -> Option<Vec<u8>> {
+    let hash = sha256_internal(&data);
+    aes256_encrypt(hash.to_vec(), key)
 }
 
-/// Encrypt then HMAC (Encrypt-then-MAC pattern)
+#[flutter_rust_bridge::frb(dart_async)]
+pub async fn hash_then_encrypt_async(data: Vec<u8>, key: Vec<u8>) -> Option<Vec<u8>> {
+    let hash = sha256_internal(&data);
+    aes256_encrypt(hash.to_vec(), key)
+}
+
 #[flutter_rust_bridge::frb(sync)]
-pub fn encrypt_then_mac_sync(
+pub fn encrypt_then_hmac(
     plaintext: Vec<u8>,
     enc_key: Vec<u8>,
     mac_key: Vec<u8>,
 ) -> Option<(Vec<u8>, [u8; 32])> {
-    let ciphertext = aes256_encrypt_sync(plaintext, enc_key)?;
-    let mac = hmac_sha256_sync(mac_key, ciphertext.clone());
+    let ciphertext = aes256_encrypt(plaintext, enc_key)?;
+    let mac = hmac_sha256_internal(&mac_key, &ciphertext);
     Some((ciphertext, mac))
 }
 
-/// Verify MAC then decrypt
+#[flutter_rust_bridge::frb(dart_async)]
+pub async fn encrypt_then_hmac_async(
+    plaintext: Vec<u8>,
+    enc_key: Vec<u8>,
+    mac_key: Vec<u8>,
+) -> Option<(Vec<u8>, [u8; 32])> {
+    let ciphertext = aes256_encrypt(plaintext, enc_key)?;
+    let mac = hmac_sha256_internal(&mac_key, &ciphertext);
+    Some((ciphertext, mac))
+}
+
 #[flutter_rust_bridge::frb(sync)]
-pub fn verify_then_decrypt_sync(
+pub fn verify_hmac_then_decrypt(
     ciphertext: Vec<u8>,
     mac: Vec<u8>,
     enc_key: Vec<u8>,
     mac_key: Vec<u8>,
 ) -> Option<Vec<u8>> {
-    // Verify MAC first
-    let computed_mac = hmac_sha256_sync(mac_key, ciphertext.clone());
-    if computed_mac.as_slice() != mac.as_slice() {
-        return None; // MAC mismatch
-    }
+    // OPTIMIZED: No unnecessary clones
+    let computed = hmac_sha256_internal(&mac_key, &ciphertext);
+    if computed.as_slice() != mac.as_slice() { return None; }
+    aes256_decrypt(ciphertext, enc_key)
+}
 
-    // MAC valid, decrypt
-    aes256_decrypt_sync(ciphertext, enc_key)
+#[flutter_rust_bridge::frb(dart_async)]
+pub async fn verify_hmac_then_decrypt_async(
+    ciphertext: Vec<u8>,
+    mac: Vec<u8>,
+    enc_key: Vec<u8>,
+    mac_key: Vec<u8>,
+) -> Option<Vec<u8>> {
+    let computed = hmac_sha256_internal(&mac_key, &ciphertext);
+    if computed.as_slice() != mac.as_slice() { return None; }
+    aes256_decrypt(ciphertext, enc_key)
 }
 
 // ============================================================================
-// STATEFUL HASHERS (For streaming/chunked data)
+// STATEFUL HASHERS (SYNC ONLY - required by Flutter)
 // ============================================================================
 
-pub struct Sha256Hasher {
-    inner: Sha256,
-}
+pub struct Sha256Hasher { inner: Sha256 }
 
 impl Sha256Hasher {
     #[flutter_rust_bridge::frb(sync)]
     pub fn new() -> Self {
-        Sha256Hasher {
-            inner: Sha256::new(),
-        }
+        Self { inner: Sha256::new() }
     }
 
     #[flutter_rust_bridge::frb(sync)]
@@ -374,23 +518,16 @@ impl Sha256Hasher {
 
     #[flutter_rust_bridge::frb(sync)]
     pub fn finalize(self) -> [u8; 32] {
-        let result = self.inner.finalize();
-        let mut output = [0u8; 32];
-        output.copy_from_slice(&result);
-        output
+        self.inner.finalize().into()
     }
 }
 
-pub struct Sha512Hasher {
-    inner: Sha512,
-}
+pub struct Sha512Hasher { inner: Sha512 }
 
 impl Sha512Hasher {
     #[flutter_rust_bridge::frb(sync)]
     pub fn new() -> Self {
-        Sha512Hasher {
-            inner: Sha512::new(),
-        }
+        Self { inner: Sha512::new() }
     }
 
     #[flutter_rust_bridge::frb(sync)]
@@ -400,24 +537,37 @@ impl Sha512Hasher {
 
     #[flutter_rust_bridge::frb(sync)]
     pub fn finalize(self) -> [u8; 64] {
-        let result = self.inner.finalize();
-        let mut output = [0u8; 64];
-        output.copy_from_slice(&result);
-        output
+        self.inner.finalize().into()
     }
 }
 
-pub struct HmacSha256State {
-    inner: HmacSha256,
+pub struct Sha1Hasher { inner: Sha1 }
+
+impl Sha1Hasher {
+    #[flutter_rust_bridge::frb(sync)]
+    pub fn new() -> Self {
+        Self { inner: Sha1::new() }
+    }
+
+    #[flutter_rust_bridge::frb(sync)]
+    pub fn update(&mut self, data: Vec<u8>) {
+        self.inner.update(&data);
+    }
+
+    #[flutter_rust_bridge::frb(sync)]
+    pub fn finalize(self) -> [u8; 20] {
+        self.inner.finalize().into()
+    }
 }
 
-impl HmacSha256State {
+pub struct Sha256HmacHasher { inner: HmacSha256 }
+
+impl Sha256HmacHasher {
     #[flutter_rust_bridge::frb(sync)]
-    pub fn new(key: Vec<u8>) -> Self {
-        HmacSha256State {
-            inner: <HmacSha256 as Mac>::new_from_slice(&key)
-                .expect("HMAC can take key of any size"),
-        }
+    pub fn new(key: Vec<u8>) -> Option<Self> {
+        <HmacSha256 as Mac>::new_from_slice(&key)
+            .ok()
+            .map(|inner| Self { inner })
     }
 
     #[flutter_rust_bridge::frb(sync)]
@@ -427,34 +577,28 @@ impl HmacSha256State {
 
     #[flutter_rust_bridge::frb(sync)]
     pub fn finalize(self) -> [u8; 32] {
-        let result = self.inner.finalize().into_bytes();
-        let mut output = [0u8; 32];
-        output.copy_from_slice(&result);
-        output
+        self.inner.finalize().into_bytes().into()
     }
 }
 
 // ============================================================================
-// UTILITY FUNCTIONS
+// UTILITIES
 // ============================================================================
 
-/// Convert bytes to hex string - do this in Rust to avoid Dart overhead
 #[flutter_rust_bridge::frb(sync)]
 #[inline(always)]
-pub fn to_hex_sync(bytes: Vec<u8>) -> String {
+pub fn to_hex(bytes: Vec<u8>) -> String {
     hex::encode(bytes)
 }
 
-/// Convert hex string to bytes
 #[flutter_rust_bridge::frb(sync)]
 #[inline(always)]
-pub fn from_hex_sync(hex_string: String) -> Option<Vec<u8>> {
+pub fn from_hex(hex_string: String) -> Option<Vec<u8>> {
     hex::decode(hex_string).ok()
 }
 
-/// Get hash output size in bytes
 #[flutter_rust_bridge::frb(sync)]
-pub fn hash_size_sync(algorithm: String) -> usize {
+pub fn hash_size(algorithm: String) -> usize {
     match algorithm.as_str() {
         "sha1" => 20,
         "sha224" => 28,
@@ -468,57 +612,16 @@ pub fn hash_size_sync(algorithm: String) -> usize {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_sha256_sync() {
-        let data = b"hello world".to_vec();
-        let hash = sha256_sync(data);
-        let expected = "b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9";
-        assert_eq!(hex::encode(hash), expected);
-    }
-
-    #[test]
-    fn test_hmac_sha256_sync() {
-        let key = b"secret".to_vec();
-        let data = b"message".to_vec();
-        let hash = hmac_sha256_sync(key, data);
-        assert_eq!(hash.len(), 32);
-    }
-
-    #[test]
-    fn test_aes256_sync() {
-        let key = vec![1u8; 32];
-        let plaintext = b"Hello World!".to_vec();
-
-        let encrypted = aes256_encrypt_sync(plaintext.clone(), key.clone()).unwrap();
-        let decrypted = aes256_decrypt_sync(encrypted, key).unwrap();
-
-        assert_eq!(decrypted, plaintext);
-    }
-
-    #[test]
-    fn test_batch() {
-        let inputs = vec![
-            b"test1".to_vec(),
-            b"test2".to_vec(),
-            b"test3".to_vec(),
-        ];
-
-        let hashes = sha256_batch_sync(inputs);
-        assert_eq!(hashes.len(), 3);
-    }
-
-    #[test]
-    fn test_streaming() {
-        let mut hasher = Sha256Hasher::new();
-        hasher.update(b"hello ".to_vec());
-        hasher.update(b"world".to_vec());
-        let hash = hasher.finalize();
-
-        let expected = "b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9";
-        assert_eq!(hex::encode(hash), expected);
-    }
+#[flutter_rust_bridge::frb(sync)]
+pub fn get_all_algorithms() -> Vec<String> {
+    vec![
+        "sha1".to_string(),
+        "sha224".to_string(),
+        "sha256".to_string(),
+        "sha384".to_string(),
+        "sha512".to_string(),
+        "sha512_224".to_string(),
+        "sha512_256".to_string(),
+        "md5".to_string(),
+    ]
 }

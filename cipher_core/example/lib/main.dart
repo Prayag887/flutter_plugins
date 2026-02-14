@@ -57,6 +57,9 @@ class _BenchmarkScreenState extends State<BenchmarkScreen>
   late TabController _tabController;
   final ValueNotifier<bool> _isRunning = ValueNotifier(false);
   final ValueNotifier<String> _currentTest = ValueNotifier('');
+  final ValueNotifier<BenchmarkProgress> _progress = ValueNotifier(
+    const BenchmarkProgress(current: 0, total: 0),
+  );
   final ValueNotifier<List<AlgorithmBenchmarkResult>> _results =
   ValueNotifier([]);
 
@@ -101,6 +104,7 @@ class _BenchmarkScreenState extends State<BenchmarkScreen>
     _tabController.dispose();
     _isRunning.dispose();
     _currentTest.dispose();
+    _progress.dispose();
     _results.dispose();
     _selectedOneShot.dispose();
     _selectedStreaming.dispose();
@@ -113,14 +117,32 @@ class _BenchmarkScreenState extends State<BenchmarkScreen>
     _isRunning.value = true;
     _results.value = [];
     _currentTest.value = '';
+    _progress.value = const BenchmarkProgress(current: 0, total: 0);
 
     try {
       final sizeMB = int.tryParse(_sizeController.text) ?? 1;
       final iterations = int.tryParse(_iterationsController.text) ?? 100;
-      final warmupIterations = (iterations * 0.1).round().clamp(5, 20);
 
-      // Pre-generate data
-      final data = List<int>.generate(sizeMB * 1024 * 1024, (i) => i % 256);
+      // Validate inputs
+      if (sizeMB <= 0 || sizeMB > 1024) {
+        _showError('Data size must be between 1 and 1024 MB');
+        return;
+      }
+      if (iterations <= 0 || iterations > 10000) {
+        _showError('Iterations must be between 1 and 10000');
+        return;
+      }
+
+      // Dynamically calculate warmup iterations based on data size
+      final warmupIterations =
+      _calculateWarmupIterations(sizeMB, iterations);
+
+      // Pre-generate data with GC-friendly approach
+      final data = _generateBenchmarkData(sizeMB);
+      if (data.isEmpty) {
+        _showError('Failed to allocate benchmark data');
+        return;
+      }
 
       // Build test list based on selected algorithms
       final tests = <BenchmarkTest>[];
@@ -135,59 +157,85 @@ class _BenchmarkScreenState extends State<BenchmarkScreen>
         tests.addAll(_getStreamingTests(algo));
       }
 
+      if (tests.isEmpty) {
+        _showError('Please select at least one algorithm');
+        return;
+      }
+
       final newResults = <AlgorithmBenchmarkResult>[];
+      _progress.value = BenchmarkProgress(current: 0, total: tests.length);
 
       // Run all benchmarks
-      for (final test in tests) {
+      for (int testIndex = 0; testIndex < tests.length; testIndex++) {
+        final test = tests[testIndex];
+
+        if (!mounted) break;
+
         _currentTest.value = '${test.algorithm} (${test.implementation})';
+        _progress.value =
+            BenchmarkProgress(current: testIndex, total: tests.length);
 
-        // Warmup
-        for (int i = 0; i < warmupIterations; i++) {
-          if (test.syncOp != null) {
-            test.syncOp!(data);
-          } else {
-            await test.asyncOp!(data);
+        // Warmup phase with error handling
+        try {
+          for (int i = 0; i < warmupIterations; i++) {
+            if (test.syncOp != null) {
+              test.syncOp!(data);
+            } else {
+              await test.asyncOp!(data);
+            }
           }
+        } catch (e) {
+          debugPrint('Warmup failed for ${test.algorithm}: $e');
+          _showError('Warmup failed for ${test.algorithm}');
+          continue;
         }
 
-        // Benchmark
+        // Benchmark phase with outlier detection
         final times = <double>[];
-        for (int i = 0; i < iterations; i++) {
-          final start = DateTime.now().microsecondsSinceEpoch;
-          if (test.syncOp != null) {
-            test.syncOp!(data);
-          } else {
-            await test.asyncOp!(data);
+        try {
+          for (int i = 0; i < iterations; i++) {
+            final start = _getHighResolutionTime();
+            if (test.syncOp != null) {
+              test.syncOp!(data);
+            } else {
+              await test.asyncOp!(data);
+            }
+            final elapsed = _getHighResolutionTime() - start;
+            times.add(elapsed);
+
+            // Yield to allow UI updates
+            if (i % 10 == 0 && i > 0) {
+              await Future.delayed(const Duration(milliseconds: 5));
+            }
           }
-          final elapsed = DateTime.now().microsecondsSinceEpoch - start;
-          times.add(elapsed / 1000.0);
+        } catch (e) {
+          debugPrint('Benchmark failed for ${test.algorithm}: $e');
+          _showError('Benchmark failed for ${test.algorithm}');
+          continue;
         }
 
-        // Calculate statistics
-        times.sort();
-        final median = times[iterations ~/ 2];
-        final min = times.first;
-        final max = times.last;
-        final mean = times.reduce((a, b) => a + b) / times.length;
-        final variance = times
-            .map((t) => (t - mean) * (t - mean))
-            .reduce((a, b) => a + b) /
-            times.length;
-        final stdDev = variance > 0.0 ? variance : 0.0;
+        // Calculate robust statistics with outlier handling
+        final stats = _calculateStatistics(times);
+        if (stats == null) {
+          _showError('Failed to calculate statistics for ${test.algorithm}');
+          continue;
+        }
 
         newResults.add(AlgorithmBenchmarkResult(
           algorithm: test.algorithm,
           implementation: test.implementation,
-          medianMs: median,
-          minMs: min,
-          maxMs: max,
-          meanMs: mean,
-          stdDevMs: stdDev,
-          throughputMBs: (sizeMB * 1000) / median,
+          medianMs: stats.median,
+          minMs: stats.min,
+          maxMs: stats.max,
+          meanMs: stats.mean,
+          stdDevMs: stats.stdDev,
+          trimmedMeanMs: stats.trimmedMean,
+          throughputMBs: (sizeMB * 1000) / stats.median,
           iterations: iterations,
+          dataSize: sizeMB,
         ));
 
-        // Update results without setState - just modify the list
+        // Update results
         _results.value = List.from(newResults);
 
         // Allow UI to update
@@ -202,19 +250,101 @@ class _BenchmarkScreenState extends State<BenchmarkScreen>
       });
 
       _results.value = newResults;
+      _currentTest.value = 'Benchmark complete!';
+      await Future.delayed(const Duration(seconds: 2));
     } catch (e, stackTrace) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: const Color(0xFFFF006E),
-          ),
-        );
+        _showError('Unexpected error: $e');
       }
       debugPrint('Benchmark error: $e\n$stackTrace');
     } finally {
       _isRunning.value = false;
       _currentTest.value = '';
+      _progress.value = const BenchmarkProgress(current: 0, total: 0);
+    }
+  }
+
+  double _getHighResolutionTime() {
+    return DateTime.now().microsecondsSinceEpoch / 1000.0;
+  }
+
+  List<int> _generateBenchmarkData(int sizeMB) {
+    try {
+      final totalBytes = sizeMB * 1024 * 1024;
+      // Use a more efficient pattern for large data
+      final data = List<int>.generate(
+        totalBytes,
+            (i) => (i ^ (i >> 8)) & 0xFF,
+        growable: false,
+      );
+      return data;
+    } catch (e) {
+      debugPrint('Failed to generate benchmark data: $e');
+      return [];
+    }
+  }
+
+  int _calculateWarmupIterations(int sizeMB, int iterations) {
+    // Adaptive warmup: more iterations for smaller data
+    if (sizeMB < 1) return 20;
+    if (sizeMB <= 10) return 15;
+    if (sizeMB <= 50) return 10;
+    return 5;
+  }
+
+  BenchmarkStatistics? _calculateStatistics(List<double> times) {
+    if (times.isEmpty) return null;
+
+    times.sort();
+    final n = times.length;
+    final min = times.first;
+    final max = times.last;
+    final mean = times.reduce((a, b) => a + b) / n;
+    final median = n.isEven ? (times[n ~/ 2 - 1] + times[n ~/ 2]) / 2 : times[n ~/ 2];
+
+    // Calculate standard deviation
+    final variance = times.map((t) => (t - mean) * (t - mean)).reduce((a, b) => a + b) / n;
+    final stdDev = (variance > 0) ? variance : 0.0;
+
+    // Calculate trimmed mean (remove outliers: bottom/top 10%)
+    // For small datasets, don't trim too aggressively
+    late double trimmedMean;
+    if (n <= 2) {
+      trimmedMean = mean;
+    } else {
+      final trimCount = ((n * 0.1).floor()).clamp(0, n ~/ 3);
+      final endIndex = n - trimCount;
+
+      if (trimCount >= endIndex) {
+        // If trimming would remove everything, use full mean
+        trimmedMean = mean;
+      } else {
+        final trimmedTimes = times.sublist(trimCount, endIndex);
+        trimmedMean = trimmedTimes.isEmpty
+            ? mean
+            : trimmedTimes.reduce((a, b) => a + b) / trimmedTimes.length;
+      }
+    }
+
+    return BenchmarkStatistics(
+      min: min,
+      max: max,
+      mean: mean,
+      median: median,
+      stdDev: stdDev,
+      trimmedMean: trimmedMean,
+    );
+  }
+
+  void _showError(String message) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: const Color(0xFFFF006E),
+          duration: const Duration(seconds: 4),
+        ),
+      );
     }
   }
 
@@ -354,8 +484,7 @@ class _BenchmarkScreenState extends State<BenchmarkScreen>
             'crypto',
                 (data) {
               final sink = crypto.sha256.startChunkedConversion(
-                ChunkedConversionSink<crypto.Digest>.withCallback(
-                        (digest) {}),
+                ChunkedConversionSink<crypto.Digest>.withCallback((_) {}),
               );
               sink.add(data);
               sink.close();
@@ -380,8 +509,7 @@ class _BenchmarkScreenState extends State<BenchmarkScreen>
             'crypto',
                 (data) {
               final sink = crypto.sha512.startChunkedConversion(
-                ChunkedConversionSink<crypto.Digest>.withCallback(
-                        (digest) {}),
+                ChunkedConversionSink<crypto.Digest>.withCallback((_) {}),
               );
               sink.add(data);
               sink.close();
@@ -496,6 +624,8 @@ class _BenchmarkScreenState extends State<BenchmarkScreen>
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     _buildConfigCard(),
+                    const SizedBox(height: 16),
+                    _buildProgressIndicator(),
                     const SizedBox(height: 16),
                     _buildBenchmarkButton(),
                   ],
@@ -696,6 +826,10 @@ class _BenchmarkScreenState extends State<BenchmarkScreen>
                             borderRadius: BorderRadius.circular(8),
                           ),
                           contentPadding: const EdgeInsets.all(12),
+                          hintText: '1-1024',
+                          hintStyle: TextStyle(
+                            color: Colors.white.withOpacity(0.3),
+                          ),
                         ),
                       );
                     },
@@ -733,6 +867,10 @@ class _BenchmarkScreenState extends State<BenchmarkScreen>
                             borderRadius: BorderRadius.circular(8),
                           ),
                           contentPadding: const EdgeInsets.all(12),
+                          hintText: '1-10000',
+                          hintStyle: TextStyle(
+                            color: Colors.white.withOpacity(0.3),
+                          ),
                         ),
                       );
                     },
@@ -743,6 +881,70 @@ class _BenchmarkScreenState extends State<BenchmarkScreen>
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildProgressIndicator() {
+    return ValueListenableBuilder<BenchmarkProgress>(
+      valueListenable: _progress,
+      builder: (context, progress, _) {
+        if (progress.total == 0) {
+          return const SizedBox.shrink();
+        }
+
+        final percentage = (progress.current / progress.total * 100).toInt();
+        return Card(
+          color: const Color(0xFF1A1F3A).withOpacity(0.6),
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(
+              color: Colors.white.withOpacity(0.1),
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Progress',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white.withOpacity(0.7),
+                      ),
+                    ),
+                    Text(
+                      '$percentage% (${progress.current}/${progress.total})',
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF00D9FF),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: progress.current / progress.total,
+                    minHeight: 6,
+                    backgroundColor: Colors.white.withOpacity(0.1),
+                    valueColor: const AlwaysStoppedAnimation<Color>(
+                      Color(0xFF00D9FF),
+                    ),
+                  ),
+                )
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -788,7 +990,8 @@ class _BenchmarkScreenState extends State<BenchmarkScreen>
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
-                          color: const Color(0xFF0A0E27).withOpacity(0.7),
+                          color: const Color(0xFF0A0E27)
+                              .withOpacity(0.7),
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -819,9 +1022,8 @@ class _BenchmarkScreenState extends State<BenchmarkScreen>
     }
 
     // Filter out groups that don't have both implementations
-    final validGroups = grouped.entries
-        .where((entry) => entry.value.length == 2)
-        .toList();
+    final validGroups =
+    grouped.entries.where((entry) => entry.value.length == 2).toList();
 
     if (validGroups.isEmpty) {
       return const SizedBox.shrink();
@@ -852,25 +1054,20 @@ class _BenchmarkScreenState extends State<BenchmarkScreen>
             ...validGroups.map((entry) {
               final algo = entry.key;
               final resultsList = entry.value;
-              final cryptoResult =
-              resultsList.firstWhere((r) => r.implementation == 'crypto');
+              final cryptoResult = resultsList
+                  .firstWhere((r) => r.implementation == 'crypto');
               final rustResult =
               resultsList.firstWhere((r) => r.implementation == 'rust');
 
-              // Calculate speedup: how much faster is Rust compared to Dart crypto
-              // If Rust takes less time (faster), speedup > 1
-              // If crypto takes less time (faster), speedup < 1
               final speedup = cryptoResult.medianMs / rustResult.medianMs;
               final rustIsFaster = speedup > 1;
 
-              // Show the speedup value with correct label
               final String speedupText;
               if (rustIsFaster) {
-                // Rust is faster - show how many times faster
-                speedupText = 'Rust ${speedup.toStringAsFixed(1)}x faster';
+                speedupText = 'Rust ${speedup.toStringAsFixed(2)}x faster';
               } else {
-                // Crypto is faster - show how many times faster
-                speedupText = 'Rust ${(1 / speedup).toStringAsFixed(1)}x slower';
+                speedupText =
+                'Rust ${(1 / speedup).toStringAsFixed(2)}x slower';
               }
 
               return Padding(
@@ -912,7 +1109,9 @@ class _BenchmarkScreenState extends State<BenchmarkScreen>
                         ),
                       ),
                       Icon(
-                        rustIsFaster ? Icons.trending_up : Icons.trending_down,
+                        rustIsFaster
+                            ? Icons.trending_up
+                            : Icons.trending_down,
                         color: rustIsFaster
                             ? const Color(0xFF00F5FF)
                             : const Color(0xFFFF006E),
@@ -953,12 +1152,25 @@ class _BenchmarkScreenState extends State<BenchmarkScreen>
                 Row(
                   children: [
                     Expanded(
-                      child: Text(
-                        result.algorithm,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 14,
-                        ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            result.algorithm,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 14,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '${result.dataSize} MB × ${result.iterations} iterations',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.white.withOpacity(0.5),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                     Container(
@@ -983,14 +1195,13 @@ class _BenchmarkScreenState extends State<BenchmarkScreen>
                   ],
                 ),
                 const SizedBox(height: 12),
+                _buildMetricRow('Median', '${result.medianMs.toStringAsFixed(3)}ms'),
+                _buildMetricRow('Mean', '${result.meanMs.toStringAsFixed(3)}ms'),
                 _buildMetricRow(
-                    'Median', '${result.medianMs.toStringAsFixed(3)}ms'),
-                _buildMetricRow(
-                    'Mean', '${result.meanMs.toStringAsFixed(3)}ms'),
+                    'Trimmed Mean', '${result.trimmedMeanMs.toStringAsFixed(3)}ms'),
                 _buildMetricRow('Min', '${result.minMs.toStringAsFixed(3)}ms'),
                 _buildMetricRow('Max', '${result.maxMs.toStringAsFixed(3)}ms'),
-                _buildMetricRow(
-                    'Std Dev', '${result.stdDevMs.toStringAsFixed(3)}ms'),
+                _buildMetricRow('Std Dev', '${result.stdDevMs.toStringAsFixed(3)}ms'),
                 const Divider(height: 16),
                 _buildMetricRow(
                   'Throughput',
@@ -1044,6 +1255,31 @@ class BenchmarkTest {
   BenchmarkTest(this.algorithm, this.implementation, this.syncOp, this.asyncOp);
 }
 
+class BenchmarkStatistics {
+  final double min;
+  final double max;
+  final double mean;
+  final double median;
+  final double stdDev;
+  final double trimmedMean;
+
+  BenchmarkStatistics({
+    required this.min,
+    required this.max,
+    required this.mean,
+    required this.median,
+    required this.stdDev,
+    required this.trimmedMean,
+  });
+}
+
+class BenchmarkProgress {
+  final int current;
+  final int total;
+
+  const BenchmarkProgress({required this.current, required this.total});
+}
+
 class AlgorithmBenchmarkResult {
   final String algorithm;
   final String implementation;
@@ -1052,8 +1288,10 @@ class AlgorithmBenchmarkResult {
   final double maxMs;
   final double meanMs;
   final double stdDevMs;
+  final double trimmedMeanMs;
   final double throughputMBs;
   final int iterations;
+  final int dataSize;
 
   AlgorithmBenchmarkResult({
     required this.algorithm,
@@ -1063,7 +1301,9 @@ class AlgorithmBenchmarkResult {
     required this.maxMs,
     required this.meanMs,
     required this.stdDevMs,
+    required this.trimmedMeanMs,
     required this.throughputMBs,
     required this.iterations,
+    required this.dataSize,
   });
 }

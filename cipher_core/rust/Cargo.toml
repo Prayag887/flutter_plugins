@@ -10,6 +10,7 @@ flutter_rust_bridge = "=2.11.1"
 hex = "0.4.3"
 hmac = "0.12.1"
 md-5 = "0.10.6"
+rand = "0.10.0"
 sha1 = "0.10.6"
 sha2 = "0.10.9"
 
@@ -20,11 +21,13 @@ tokio = { version = "1", features = ["full"] }
 crate-type = ["cdylib", "staticlib"]
 
 [profile.release]
-opt-level = 3          # Aggressive optimization
-lto = "thin"           # Link-time optimization (not as slow as "full")
-codegen-units = 1      # Better optimization (slower compile)
-strip = true           # Remove debug symbols
-panic = "abort"
+opt-level = 3
+debug = false
+overflow-checks = false  # No runtime integer overflow checks
+lto = "fat"           # Full link-time optimization (best performance)
+codegen-units = 1      # Single codegen unit for best optimization
+strip = true           # Strip symbols & debuginfo for smaller, faster code
+panic = "abort"        # Abort quickly on panic (no unwind overhead)
 
 [profile.release-android]
 inherits = "release"

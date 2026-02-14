@@ -421,7 +421,7 @@ class Hmac {
   /// Start chunked conversion for streaming
   ByteConversionSink startChunkedConversion(Sink<Digest> sink) {
     if (_hash == sha256) {
-      return _HmacSink(sink, ffi.HmacSha256State(key: _key));
+      return _HmacSink(sink, ffi.Sha256HmacHasher(key: _key));
     }
     throw UnimplementedError('Chunked HMAC not implemented for ${_hash.name}');
   }
@@ -498,10 +498,10 @@ class _Sha512Hasher implements Hasher {
 }
 
 class _HmacSha256Hasher implements HmacHasher {
-  final ffi.HmacSha256State _hasher;
+  final ffi.Sha256HmacHasher _hasher;
   bool _closed = false;
 
-  _HmacSha256Hasher(Uint8List key) : _hasher = ffi.HmacSha256State(key: key);
+  _HmacSha256Hasher(Uint8List key) : _hasher = ffi.Sha256HmacHasher(key: key);
 
   @override
   void add(List<int> data) {
@@ -551,7 +551,7 @@ class _HashSink extends ByteConversionSink {
 
 class _HmacSink extends ByteConversionSink {
   final Sink<Digest> _sink;
-  final ffi.HmacSha256State _hasher;
+  final ffi.Sha256HmacHasher _hasher;
   bool _closed = false;
 
   _HmacSink(this._sink, this._hasher);

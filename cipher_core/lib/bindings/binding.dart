@@ -13,35 +13,35 @@ class RustCryptoBindings {
   // =========================================================================
 
   static Uint8List sha256(Uint8List data) {
-    return ffi.sha256Sync(data: data).inner;
+    return ffi.sha256(data: data).inner;
   }
 
   static Uint8List sha512(Uint8List data) {
-    return ffi.sha512Sync(data: data).inner;
+    return ffi.sha512(data: data).inner;
   }
 
   static Uint8List sha1(Uint8List data) {
-    return ffi.sha1Sync(data: data).inner;
+    return ffi.sha1(data: data).inner;
   }
 
   static Uint8List sha384(Uint8List data) {
-    return ffi.sha384Sync(data: data).inner;
+    return ffi.sha384(data: data).inner;
   }
 
   static Uint8List sha224(Uint8List data) {
-    return ffi.sha224Sync(data: data).inner;
+    return ffi.sha224(data: data).inner;
   }
 
   static Uint8List md5(Uint8List data) {
-    return ffi.md5Sync(data: data).inner;
+    return ffi.md5(data: data).inner;
   }
 
   static Uint8List sha512_256(Uint8List data) {
-    return ffi.sha512256Sync(data: data).inner;
+    return ffi.sha512256(data: data).inner;
   }
 
   static Uint8List sha512_224(Uint8List data) {
-    return ffi.sha512224Sync(data: data).inner;
+    return ffi.sha512224(data: data).inner;
   }
 
   // =========================================================================
@@ -78,27 +78,27 @@ class RustCryptoBindings {
   // =========================================================================
 
   static Uint8List hmacSha256(Uint8List key, Uint8List data) {
-    return ffi.hmacSha256Sync(key: key, data: data).inner;
+    return ffi.hmacSha256(key: key, data: data).inner;
   }
 
   static Uint8List hmacSha512(Uint8List key, Uint8List data) {
-    return ffi.hmacSha512Sync(key: key, data: data).inner;
+    return ffi.hmacSha512(key: key, data: data).inner;
   }
 
   static Uint8List hmacSha1(Uint8List key, Uint8List data) {
-    return ffi.hmacSha1Sync(key: key, data: data).inner;
+    return ffi.hmacSha1(key: key, data: data).inner;
   }
 
   static Uint8List hmacSha384(Uint8List key, Uint8List data) {
-    return ffi.hmacSha384Sync(key: key, data: data).inner;
+    return ffi.hmacSha384(key: key, data: data).inner;
   }
 
   static Uint8List hmacSha224(Uint8List key, Uint8List data) {
-    return ffi.hmacSha224Sync(key: key, data: data).inner;
+    return ffi.hmacSha224(key: key, data: data).inner;
   }
 
   static Uint8List hmacMd5(Uint8List key, Uint8List data) {
-    return ffi.hmacMd5Sync(key: key, data: data).inner;
+    return ffi.hmacMd5(key: key, data: data).inner;
   }
 
   // =========================================================================
@@ -120,11 +120,11 @@ class RustCryptoBindings {
   // =========================================================================
 
   static Uint8List? aes256Encrypt(Uint8List plaintext, Uint8List key) {
-    return ffi.aes256EncryptSync(plaintext: plaintext, key: key);
+    return ffi.aes256Encrypt(plaintext: plaintext, key: key);
   }
 
   static Uint8List? aes256Decrypt(Uint8List ciphertext, Uint8List key) {
-    return ffi.aes256DecryptSync(ciphertext: ciphertext, key: key);
+    return ffi.aes256Decrypt(ciphertext: ciphertext, key: key);
   }
 
   static Future<Uint8List?> aes256EncryptAsync(Uint8List plaintext, Uint8List key) {
@@ -140,12 +140,12 @@ class RustCryptoBindings {
   // =========================================================================
 
   static List<Uint8List> sha256Batch(List<Uint8List> inputs) {
-    final results = ffi.sha256BatchSync(inputs: inputs);
+    final results = ffi.sha256Batch(inputs: inputs);
     return results.map((r) => r.inner).toList();
   }
 
   static List<Uint8List> hmacSha256Batch(Uint8List key, List<Uint8List> messages) {
-    final results = ffi.hmacSha256BatchSync(key: key, messages: messages);
+    final results = ffi.hmacSha256Batch(key: key, messages: messages);
     return results.map((r) => r.inner).toList();
   }
 
@@ -154,7 +154,7 @@ class RustCryptoBindings {
   // =========================================================================
 
   static Uint8List? hashThenEncrypt(Uint8List data, Uint8List key) {
-    return ffi.hashThenEncryptSync(data: data, key: key);
+    return ffi.hashThenEncrypt(data: data, key: key);
   }
 
   static (Uint8List, Uint8List)? encryptThenMac({
@@ -162,7 +162,7 @@ class RustCryptoBindings {
     required Uint8List encKey,
     required Uint8List macKey,
   }) {
-    final result = ffi.encryptThenMacSync(
+    final result = ffi.encryptThenHmac(
       plaintext: plaintext,
       encKey: encKey,
       macKey: macKey,
@@ -178,7 +178,7 @@ class RustCryptoBindings {
     required Uint8List encKey,
     required Uint8List macKey,
   }) {
-    return ffi.verifyThenDecryptSync(
+    return ffi.verifyHmacThenDecrypt(
       ciphertext: ciphertext,
       mac: mac,
       encKey: encKey,
@@ -191,15 +191,15 @@ class RustCryptoBindings {
   // =========================================================================
 
   static String toHex(Uint8List bytes) {
-    return ffi.toHexSync(bytes: bytes);
+    return ffi.toHex(bytes: bytes);
   }
 
   static Uint8List? fromHex(String hexString) {
-    return ffi.fromHexSync(hexString: hexString);
+    return ffi.fromHex(hexString: hexString);
   }
 
   static int hashSize(String algorithm) {
-    return ffi.hashSizeSync(algorithm: algorithm).toInt();
+    return ffi.hashSize(algorithm: algorithm).toInt();
   }
 
   // =========================================================================
@@ -214,7 +214,7 @@ class RustCryptoBindings {
     return ffi.Sha512Hasher();
   }
 
-  static ffi.HmacSha256State createHmacSha256State(Uint8List key) {
-    return ffi.HmacSha256State(key: key);
+  static ffi.Sha256HmacHasher createSha256HmacHasher(Uint8List key) {
+    return ffi.Sha256HmacHasher(key: key);
   }
 }
