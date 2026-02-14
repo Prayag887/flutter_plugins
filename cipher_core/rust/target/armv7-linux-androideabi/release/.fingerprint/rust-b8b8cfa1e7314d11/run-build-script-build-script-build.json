@@ -1,0 +1,1 @@
+{"rustc":8051534001814199968,"features":"","declared_features":"","target":0,"profile":0,"path":0,"deps":[[169654879674360915,"build_script_build",false,4439602445785455268]],"local":[{"RerunIfChanged":{"output":"armv7-linux-androideabi\\release\\build\\rust-b8b8cfa1e7314d11\\output","paths":["src/lib.rs"]}}],"rustflags":[],"config":0,"compile_kind":0}

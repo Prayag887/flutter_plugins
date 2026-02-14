@@ -1,0 +1,1 @@
+D:\projects\packages\cipher_core\rust\target\armv7-linux-androideabi\release\librust.a: D:\projects\packages\cipher_core\rust\build.rs D:\projects\packages\cipher_core\rust\src\frb_generated.rs D:\projects\packages\cipher_core\rust\src\lib.rs

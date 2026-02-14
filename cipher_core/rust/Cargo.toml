@@ -1,0 +1,36 @@
+[package]
+name = "rust"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+aes-gcm = "0.10.3"
+base64 = "0.22.1"
+flutter_rust_bridge = "=2.11.1"
+hex = "0.4.3"
+hmac = "0.12.1"
+md-5 = "0.10.6"
+sha1 = "0.10.6"
+sha2 = "0.10.9"
+
+[dev-dependencies]
+tokio = { version = "1", features = ["full"] }
+
+[lib]
+crate-type = ["cdylib", "staticlib"]
+
+[profile.release]
+opt-level = 3          # Aggressive optimization
+lto = "thin"           # Link-time optimization (not as slow as "full")
+codegen-units = 1      # Better optimization (slower compile)
+strip = true           # Remove debug symbols
+panic = "abort"
+
+[profile.release-android]
+inherits = "release"
+
+[profile.release-ios]
+inherits = "release"
+
+
+[target.'cfg(target_arch = "aarch64")'.dependencies]
