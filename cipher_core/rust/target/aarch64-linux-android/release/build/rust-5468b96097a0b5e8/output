@@ -1,3 +1,0 @@
-cargo:rerun-if-changed=src/lib.rs
-cargo:rustc-link-lib=log
-cargo:rustc-link-lib=android

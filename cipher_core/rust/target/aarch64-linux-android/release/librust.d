@@ -1,1 +1,0 @@
-D:\projects\packages\cipher_core\rust\target\aarch64-linux-android\release\librust.so: D:\projects\packages\cipher_core\rust\build.rs D:\projects\packages\cipher_core\rust\src\frb_generated.rs D:\projects\packages\cipher_core\rust\src\lib.rs
